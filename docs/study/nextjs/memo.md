@@ -45,3 +45,38 @@ tailwindcss util class を使用する
 }
 ```
 
+## clsx
+クラス名を条件分岐で切り替えできる
+
+# フォント
+フォントはパフォーマンスに強く影響する
+- **累積レイアウトシフト**：Google が SEO の指標に用いる、フォールバックフォントからシステムフォントに置き換えた際に生じるレイアウトのズレの大きさ
+
+Next は、`next/font` モジュールによってアプリケーション内のフォントを自動的に最適化する
+
+```ts
+// fonts.ts
+import { Inter } from 'next/font/google';
+
+// subsets: 使用する文字だけを絞り込んで用いる
+export const inter = Inter({ subsets: ['latin'] });
+```
+
+```ts
+// layout.tsx
+import '@/app/ui/global.css';
+import { inter } from '@/app/ui/fonts';
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`${inter.className} antialiased`}>{children}</body>
+    </html>
+  );
+}
+```
+
