@@ -80,3 +80,39 @@ export default function RootLayout({
 }
 ```
 
+# 画像
+`/public` に設置
+`next/image` の `<Image>` を使用することで、レイアウト最適や各種最適化がつく
+
+```jsx
+<Image
+  src="/hero-desktop.png"
+  width={1000}
+  height={760}
+  className="hidden md:block"
+  alt="Screenshots of the dashboard project showing desktop version"
+/>
+```
+
+## レスポンシブ
+プレフィクスを設けることで、条件に応じた場合のみ適応するクラスが設定できる
+このとき、**プレフィクスがない側がモバイルに適用されるクラスである**点に注意する
+```jsx
+// for Desktop
+<Image
+  src="/hero-desktop.png"
+  width={1000}
+  height={760}
+  className="hidden md:block"
+  alt="Screenshots of the dashboard project showing desktop version"
+/>
+
+// for Mobile
+<Image
+  src="/hero-mobile.png"
+  width={560}
+  height={620}
+  className="block md:hidden"
+  alt="Screenshots of the dashboard project showing mobile version"
+/>
+```
