@@ -12,3 +12,13 @@ https://nextjs.org/learn
 - フォーム検証、アクセシビリティ
 - 認証
 - メタデータ
+
+# デモ
+`nextjs-dashboard` をいじりながら進める。
+
+## フォルダ構造 (一例)
+- /app
+  - /lib: util, fetcher など
+  - /ui: UI コンポーネント
+  - /public: 静的アセット
+
