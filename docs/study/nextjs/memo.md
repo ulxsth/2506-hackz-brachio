@@ -21,4 +21,27 @@ https://nextjs.org/learn
   - /lib: util, fetcher など
   - /ui: UI コンポーネント
   - /public: 静的アセット
+  
+# スタイリング
+## tailwind
+tailwindcss util class を使用する
+```css
+/* global.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+## css modules
+異なるスタイルファイル間での衝突を防ぐことが期待できる
+```css
+/* home.module.css */
+.shape {
+  height: 0;
+  width: 0;
+  border-bottom: 30px solid black;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+}
+```
 
