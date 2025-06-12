@@ -116,3 +116,26 @@ export default function RootLayout({
   alt="Screenshots of the dashboard project showing mobile version"
 />
 ```
+
+# ルーティング
+Next.js では **ファイルシステムルーティング** を採用している
+
+```
+- app (/)
+  - dashboard (/dashboard)
+    - invoices (/dashboard/invoices)
+```
+
+## page.tsx
+各フォルダ内に設置された `page.tsx` が、各ルートのページコンポーネントとして扱われる
+
+逆に言えば、app 内にフォルダが作成されても、 `page.tsx` （または`route.ts`）を設置しなければルーティングに反映されることはない
+https://nextjs.org/docs/app/getting-started/project-structure#colocation
+
+また、`_` を頭につける、`()` で囲むことで明示的にルーティングから除外することもできる（例：`_hoge`, `(hoge)`）
+
+## layout.tsx
+各フォルダ内に設置された `layout.tsx` は、そのフォルダおよびフォルダ内のすべてのネストされたフォルダ内の `page.tsx` の規定レイアウトとなる
+
+レイアウトは **ナビゲーション時に再レンダリングされない**
+つまり、ページ遷移前後で同一のパーツをサーバから取り寄せることがなく、不要な処理・通信が発生しない
