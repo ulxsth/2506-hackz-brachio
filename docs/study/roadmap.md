@@ -1,9 +1,9 @@
-# 開発手順書
+*# 開発手順書
 ## 技術キャッチアップ＆開発プラン
 
 ### 前提
 - **既知技術**: React, TypeScript
-- **新規技術**: Next.js, Hono, Socket.io, PostgreSQL, Redis, Docker, AWS, Terraform
+- **新規技術**: Next.js, Express, Socket.io, PostgreSQL, Redis, Docker, AWS, Terraform
 
 ---
 
@@ -37,49 +37,57 @@ npm run dev
 - 簡単なNext.jsアプリ（CSR）の作成
 - ルーティングの理解
 
-### 1.2 Hono + Socket.io 学習（3-4日）
+### 1.2 Express + Socket.io 学習（3-4日）
 #### 目標
-- Honoの基本的なAPI作成
+- Expressの基本的なAPI作成
 - Socket.ioによるリアルタイム通信
 - TypeScriptでのサーバーサイド開発
 
 #### 学習手順
 ```bash
-# 1. Hono プロジェクトセットアップ
-mkdir hono-practice
-cd hono-practice
+# 1. Express プロジェクトセットアップ
+mkdir express-practice
+cd express-practice
 npm init -y
-npm install hono @hono/node-server
-npm install -D typescript @types/node tsx
+npm install express socket.io cors
+npm install -D typescript @types/node @types/express @types/socket.io ts-node nodemon
 
-# 2. Socket.io 追加
-npm install socket.io
-npm install -D @types/socket.io
+# 2. TypeScript設定
+npx tsc --init
 
 # 3. 実践内容
 # - 基本的なREST API
 # - Socket.ioサーバーの作成
 # - リアルタイム通信の実装
+# - CORSの設定
 ```
 
 #### サンプルコード学習
 ```typescript
-// server.ts (Hono + Socket.io)
-import { Hono } from 'hono'
-import { serve } from '@hono/node-server'
+// server.ts (Express + Socket.io)
+import express from 'express'
+import { createServer } from 'http'
 import { Server } from 'socket.io'
+import cors from 'cors'
 
-const app = new Hono()
+const app = express()
+const server = createServer(app)
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+})
+
+app.use(cors())
+app.use(express.json())
 
 // REST API
-app.get('/api/health', (c) => {
-  return c.json({ status: 'ok' })
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' })
 })
 
 // Socket.io
-const server = serve({ fetch: app.fetch })
-const io = new Server(server)
-
 io.on('connection', (socket) => {
   console.log('ユーザーが接続しました')
   
@@ -87,15 +95,19 @@ io.on('connection', (socket) => {
     io.emit('message', data) // 全員に送信
   })
 })
+
+server.listen(3001, () => {
+  console.log('Server running on port 3001')
+})
 ```
 
 #### 参考リソース
-- [Hono 公式ドキュメント](https://hono.dev/)
+- [Express 公式ドキュメント](https://expressjs.com/)
 - [Socket.io チュートリアル](https://socket.io/get-started/chat)
 
 #### 成果物
 - 簡単なチャットアプリの作成
-- HonoとSocket.ioの基本理解
+- ExpressとSocket.ioの基本理解
 
 ### 1.3 データベース学習（2-3日）
 #### 目標
@@ -173,3 +185,4 @@ HGET user:1 name
 #### 成果物
 - Docker環境でのDB操作経験
 - 基本的なSQL・Redisコマンドの理解
+*
