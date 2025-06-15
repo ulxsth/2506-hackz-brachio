@@ -97,7 +97,7 @@ TYPE 2 LIVE
 
 #### システム構成
 - **フロントエンド**: Next.js 14 (CSR + App Router) + TypeScript
-- **バックエンド**: Hono + TypeScript
+- **バックエンド**: Express + TypeScript
 - **リアルタイム通信**: Socket.io
 
 #### 開発環境
