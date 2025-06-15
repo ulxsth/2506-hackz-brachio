@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build", 
+    "build": "next build",
     "start": "next start",
     "lint": "echo \"lint script placeholder\"",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "jotai": "^2.12.5",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -19,6 +20,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.5",
+    "tailwindcss": "^4.1.10",
     "typescript": "^5"
   }
 }
