@@ -17,8 +17,8 @@ export default function Home() {
       setError('ニックネームを入力してください');
       return;
     }
-    if (nickname.length > 10) {
-      setError('ニックネームは10文字以内で入力してください');
+    if (nickname.length > 15) {
+      setError('ニックネームは15文字以内で入力してください');
       return;
     }
     if (nickname.length < 1) {
@@ -80,11 +80,11 @@ export default function Home() {
               onChange={(e) => setNickname(e.target.value)}
               placeholder="ニックネームを入力してください"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              maxLength={10}
+              maxLength={15}
             />
             <div className="flex justify-between mt-1 text-xs text-gray-500">
-              <span>1-10文字</span>
-              <span>{nickname.length}/10</span>
+              <span>1-15文字</span>
+              <span>{nickname.length}/15</span>
             </div>
           </div>
 
@@ -98,7 +98,7 @@ export default function Home() {
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105"
           >
-            はじめる
+            入場
           </button>
         </form>
 

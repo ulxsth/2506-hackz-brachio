@@ -12,7 +12,6 @@ interface Player {
 interface Constraint {
   type: string;
   description: string;
-  coefficient: number;
 }
 
 export default function GamePage() {
@@ -24,8 +23,7 @@ export default function GamePage() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [constraint, setConstraint] = useState<Constraint>({
     type: '文字制約',
-    description: '「a」を含む単語',
-    coefficient: 1.5
+    description: '「a」を含む単語'
   });
   const [players, setPlayers] = useState<Player[]>([
     { name: 'あなた', score: 0, rank: 1 },
@@ -124,8 +122,8 @@ export default function GamePage() {
     }
 
     if (isValid) {
-      // 得点計算
-      points = Math.floor(word.length * constraint.coefficient * (combo + 1));
+      // 得点計算（制約係数は1.5で固定）
+      points = Math.floor(word.length * 1.5 * (combo + 1));
       setMyScore(prev => prev + points);
       setCombo(prev => {
         const newCombo = prev + 1;
@@ -161,10 +159,10 @@ export default function GamePage() {
     
     // 新しい制約をランダムに設定
     const constraints = [
-      { type: '文字制約', description: '「e」を含む単語', coefficient: 1.2 },
-      { type: '文字制約', description: '「s」で始まる単語', coefficient: 1.8 },
-      { type: '文字数制約', description: '6文字以上の単語', coefficient: 2.0 },
-      { type: 'カテゴリー制約', description: 'プログラミング言語', coefficient: 2.5 }
+      { type: '文字制約', description: '「e」を含む単語' },
+      { type: '文字制約', description: '「s」で始まる単語' },
+      { type: '文字数制約', description: '6文字以上の単語' },
+      { type: 'カテゴリー制約', description: 'プログラミング言語' }
     ];
     setConstraint(constraints[Math.floor(Math.random() * constraints.length)]);
   };
