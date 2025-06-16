@@ -32,6 +32,7 @@ resource "vercel_project" "brachio_frontend" {
   build_command    = "npm run build"
   install_command  = "npm ci"
   output_directory = ".next"
+  node_version     = "20.x"
 
   # 環境変数
   environment = [
