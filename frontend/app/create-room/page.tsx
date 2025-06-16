@@ -18,6 +18,11 @@ export default function CreateRoomPage() {
       return;
     }
 
+    if (roomCode.length < 1 || roomCode.length > 30) {
+      alert('あいことばは1文字以上30文字以下で入力してください');
+      return;
+    }
+
     if (maxPlayers < 2 || maxPlayers > 100) {
       alert('最大人数は2人以上100人以下で設定してください');
       return;
@@ -64,9 +69,10 @@ export default function CreateRoomPage() {
               onChange={(e) => setRoomCode(e.target.value)}
               placeholder="例: hoge123"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+              maxLength={30}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">参加者がルームに入るためのパスワードです</p>
+            <p className="text-xs text-gray-500 mt-1">参加者がルームに入るためのパスワードです（1-30文字）</p>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
