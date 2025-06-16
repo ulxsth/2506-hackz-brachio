@@ -63,10 +63,6 @@ export default function ResultPage() {
     setTimeout(() => setShowAnimation(true), 500);
   }, []);
 
-  const handlePlayAgain = () => {
-    router.push('/create-room');
-  };
-
   const handleBackToMenu = () => {
     router.push('/menu');
   };
@@ -213,17 +209,10 @@ export default function ResultPage() {
         </div>
 
         {/* アクションボタン */}
-        <div className={`flex flex-col sm:flex-row gap-4 transform transition-all duration-1000 delay-900 ${showAnimation ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <button
-            onClick={handlePlayAgain}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
-          >
-            <span className="text-xl">🔄</span>
-            <span>もう一度遊ぶ</span>
-          </button>
+        <div className={`flex justify-center transform transition-all duration-1000 delay-900 ${showAnimation ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           <button
             onClick={handleBackToMenu}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
           >
             <span className="text-xl">🏠</span>
             <span>メニューに戻る</span>
