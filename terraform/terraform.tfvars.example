@@ -1,0 +1,6 @@
+# GitHub リポジトリ名を設定
+# 例: "yotu/2506-hackz-brachio"
+github_repo = "your-username/2506-hackz-brachio"
+
+# Vercel チーム ID (チーム使用時のみ)
+# vercel_team_id = "team_xxxxxxxxxxxxxxxxxxxxxxxx"
