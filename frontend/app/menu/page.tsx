@@ -70,7 +70,7 @@ export default function MenuPage() {
             onClick={handleChangeNickname}
             className="text-sm text-gray-500 hover:text-gray-700 underline"
           >
-            ニックネームを変更
+            戻る
           </button>
         </div>
 
