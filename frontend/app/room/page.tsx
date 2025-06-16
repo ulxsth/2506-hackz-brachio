@@ -75,7 +75,7 @@ export default function RoomPage() {
         {/* ルーム情報 */}
         <div className="bg-gray-50 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">ルーム情報</h2>
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm">
             <div>
               <span className="text-gray-600">あいことば:</span>
               <span className="ml-2 font-mono bg-white px-2 py-1 rounded font-bold text-indigo-600">
@@ -89,10 +89,6 @@ export default function RoomPage() {
             <div>
               <span className="text-gray-600">参加者数:</span>
               <span className="ml-2 font-semibold">{players.length}/{roomData.maxPlayers}人</span>
-            </div>
-            <div>
-              <span className="text-gray-600">ステータス:</span>
-              <span className="ml-2 text-green-600 font-semibold">待機中</span>
             </div>
           </div>
         </div>

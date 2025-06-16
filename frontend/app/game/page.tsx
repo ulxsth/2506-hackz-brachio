@@ -169,7 +169,7 @@ export default function GamePage() {
 
   const handleQuitGame = () => {
     if (confirm('ゲームを終了しますか？')) {
-      router.push('/menu');
+      router.push('/result');
     }
   };
 
@@ -202,7 +202,7 @@ export default function GamePage() {
             onClick={handleQuitGame}
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
           >
-            ゲーム終了
+            [DEBUG] ゲーム終了
           </button>
         </div>
 
