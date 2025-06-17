@@ -38,18 +38,7 @@ resource "vercel_project" "brachio_frontend" {
   automatically_expose_system_environment_variables = true
 
   # 環境変数
-  environment = [
-    {
-      key    = "NODE_ENV"
-      value  = "production"
-      target = ["production"]
-    },
-    {
-      key    = "NODE_ENV"
-      value  = "development"
-      target = ["development"]
-    }
-  ]
+  environment = []
 
   # プレビューコメント有効化
   git_comments = {
