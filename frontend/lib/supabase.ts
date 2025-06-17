@@ -1,53 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
+import { Database } from './database.types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
-// Database Types
-export interface Room {
-  id: string
-  host_id: string
-  settings: {
-    timeLimit: number // 制限時間（分）
-    maxPlayers: number // 最大参加人数
-    category: string // カテゴリー
-  }
-  status: 'waiting' | 'playing' | 'finished'
-  created_at: string
-}
+// 型安全なヘルパー型
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
+export type Inserts<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
+export type Updates<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
 
-export interface Player {
-  id: string
-  room_id: string
-  name: string
-  score: number
-  combo: number
-  is_host: boolean
-  created_at: string
-}
+// 使いやすい型エイリアス
+export type Room = Tables<'rooms'>
+export type Player = Tables<'players'>
+export type GameSession = Tables<'game_sessions'>
+export type WordSubmission = Tables<'word_submissions'>
+export type ITTerm = Tables<'it_terms'>
 
-export interface GameSession {
-  id: string
-  room_id: string
-  status: 'waiting' | 'playing' | 'finished'
-  start_time?: string
-  end_time?: string
-  created_at: string
-}
-
-export interface WordSubmission {
-  id: string
-  game_session_id: string
-  player_id: string
-  word: string
-  score: number
-  is_valid: boolean
-  submitted_at: string
-}
-
-// Realtime Types
+// Realtime Types - 型安全なリアルタイム通信用
 export interface RealtimeRoom extends Room {
   players: Player[]
 }

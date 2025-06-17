@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "echo \"lint script placeholder\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:types": "npx supabase gen types typescript --local > lib/database.types.ts",
+    "db:types:remote": "npx supabase gen types typescript --project-id \"$PROJECT_REF\" > lib/database.types.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
