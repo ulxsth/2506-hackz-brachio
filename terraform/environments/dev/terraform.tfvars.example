@@ -1,0 +1,7 @@
+# GitHub リポジトリ名を設定
+github_repo = "yotu/2506-hackz-brachio"
+
+# Supabase 設定
+supabase_organization_id = "your-organization-id"
+supabase_database_password = "dev-secure-password-123"
+supabase_region = "ap-northeast-1"

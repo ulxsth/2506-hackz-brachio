@@ -4,3 +4,22 @@ github_repo = "your-username/2506-hackz-brachio"
 
 # Vercel チーム ID (チーム使用時のみ)
 # vercel_team_id = "team_xxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Supabase 設定
+supabase_organization_id = "your-organization-id"
+supabase_database_password = "your-secure-database-password"
+supabase_instance_size = "micro"  # micro, small, medium, large
+
+# 環境設定
+environment = "dev"  # dev, staging, prod
+
+# サイト設定
+site_url = "http://localhost:3000"
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "https://localhost:3000",
+  "https://your-domain.vercel.app"
+]
+
+# 認証設定
+enable_sign_ups = true

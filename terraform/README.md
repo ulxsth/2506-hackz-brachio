@@ -1,39 +1,251 @@
-# Terraform Vercel Deployment
+# TYPE 2 LIVE Infrastructure Management 🏗️
 
-このディレクトリは Terraform を使用して Next.js アプリケーションを Vercel にデプロイするための設定です。
+TYPE 2 LIVE のインフラストラクチャを Terraform で管理します。環境分離のベストプラクティスに従い、dev/staging/prod の3環境を効率的に運用できます。
 
-## 前提条件
+## 🏗️ アーキテクチャ
 
-1. **Vercel アカウント**: [vercel.com](https://vercel.com) でアカウント作成
-2. **GitHub リポジトリ**: このプロジェクトが GitHub にプッシュされている
-3. **Vercel API Token**: [Vercel Settings](https://vercel.com/account/tokens) で作成
+### 環境分離戦略
+- **Development**: `develop` ブランチ → `dev` 環境
+- **Staging**: `staging` ブランチ → `staging` 環境  
+- **Production**: `main` ブランチ → `prod` 環境
 
-## セットアップ
+### 管理リソース
+- **Vercel**: フロントエンドデプロイ (Next.js)
+- **Supabase**: バックエンド (DB, Auth, Realtime)
 
-### 1. 環境変数の設定
+## 📁 ディレクトリ構造
 
-```bash
-export VERCEL_API_TOKEN="your_vercel_api_token_here"
+```
+terraform/
+├── modules/
+│   └── type2live/           # 共通インフラモジュール
+│       ├── main.tf          # リソース定義
+│       ├── variables.tf     # 変数定義
+│       └── outputs.tf       # 出力定義
+├── environments/
+│   ├── dev/                 # 開発環境
+│   ├── staging/             # ステージング環境（未実装）
+│   └── prod/                # 本番環境（未実装）
+└── README.md
 ```
 
-### 2. 設定ファイルの準備
+## 🚀 セットアップ
+
+### 1. 前提条件
+
+- **Vercel Account**: [vercel.com](https://vercel.com)
+- **Supabase Account**: [supabase.com](https://supabase.com)
+- **GitHub Repository**: このプロジェクトがGitHubにプッシュ済み
+- **API Tokens**:
+  - [Vercel API Token](https://vercel.com/account/tokens)
+  - [Supabase Access Token](https://supabase.com/dashboard/account/tokens)
+
+### 2. 環境変数設定
 
 ```bash
-# サンプルファイルをコピー
+# 必要なTokenをエクスポート
+export VERCEL_API_TOKEN="your_vercel_token"
+export SUPABASE_ACCESS_TOKEN="your_supabase_token"
+```
+
+### 3. 設定ファイル準備
+
+```bash
+# 開発環境用設定ファイル作成
+cd terraform/environments/dev
 cp terraform.tfvars.example terraform.tfvars
 
 # terraform.tfvars を編集
 vim terraform.tfvars
 ```
 
-### 3. 必要な設定値
+### 4. 設定項目
 
-`terraform.tfvars` で以下を設定してください：
+`terraform.tfvars` で設定する値：
 
-- `github_repo`: GitHub リポジトリ名 (例: "yotu/2506-hackz-brachio")
-- `api_url_production`: 本番 API の URL
-- `api_url_preview`: プレビュー API の URL
-- `custom_domain`: カスタムドメイン（オプション）
+```hcl
+github_repo = "your-username/2506-hackz-brachio"
+supabase_organization_id = "your-org-id"
+supabase_database_password = "secure-password-123"
+supabase_region = "ap-northeast-1"
+```
+
+## 🔧 デプロイ手順
+
+### 開発環境のデプロイ
+
+```bash
+# 1. 開発環境ディレクトリに移動
+cd terraform/environments/dev
+
+# 2. Terraform初期化
+terraform init
+
+# 3. プラン確認
+terraform plan
+
+# 4. デプロイ実行
+terraform apply
+
+# 5. 環境変数をフロントエンドに同期
+cd ../../../
+./sync-env.sh dev
+```
+
+### 他環境のデプロイ
+
+```bash
+# ステージング環境
+cd terraform/environments/staging
+terraform init && terraform apply
+cd ../../../ && ./sync-env.sh staging
+
+# 本番環境  
+cd terraform/environments/prod
+terraform init && terraform apply
+cd ../../../ && ./sync-env.sh prod
+```
+
+## 🔄 環境変数の同期
+
+### 自動同期スクリプト
+
+```bash
+# 開発環境の環境変数を同期
+./sync-env.sh dev
+
+# ステージング環境の環境変数を同期
+./sync-env.sh staging
+
+# 本番環境の環境変数を同期
+./sync-env.sh prod
+```
+
+このスクリプトは以下を実行します：
+1. Terraformから最新の設定値を取得
+2. フロントエンド用の `.env.local` ファイルを生成
+3. Supabase CLI の設定 (開発環境のみ)
+
+### 手動での環境変数確認
+
+```bash
+cd terraform/environments/dev
+
+# Supabase URL確認
+terraform output supabase_url
+
+# 機密情報の確認
+terraform output -raw supabase_anon_key
+terraform output -raw supabase_service_role_key
+```
+
+## 📊 運用フロー
+
+### 1. 日常的な開発
+
+```bash
+# 1. 機能開発
+git checkout -b feature/new-function
+# ... 開発 ...
+git push origin feature/new-function
+# → Vercel自動プレビューデプロイ
+
+# 2. 開発環境テスト
+git checkout develop
+git merge feature/new-function
+git push origin develop
+# → dev環境で動作確認
+
+# 3. インフラ変更が必要な場合
+cd terraform/environments/dev
+terraform plan
+terraform apply
+./sync-env.sh dev
+```
+
+### 2. リリースフロー
+
+```bash
+# 1. ステージング環境デプロイ
+git checkout staging
+git merge develop
+git push origin staging
+
+# 2. ステージング環境でテスト
+cd terraform/environments/staging
+terraform apply
+
+# 3. 本番環境デプロイ
+git checkout main  
+git merge staging
+git push origin main
+
+# 4. 本番環境でデプロイ
+cd terraform/environments/prod
+terraform apply
+```
+
+## 🛠️ トラブルシューティング
+
+### よくある問題
+
+1. **Terraform state が見つからない**
+   ```bash
+   cd terraform/environments/dev
+   terraform init
+   ```
+
+2. **Supabase認証エラー**
+   ```bash
+   # Access Tokenを再確認
+   echo $SUPABASE_ACCESS_TOKEN
+   
+   # 新しいTokenを取得して設定
+   export SUPABASE_ACCESS_TOKEN="new_token"
+   ```
+
+3. **環境変数が反映されない**
+   ```bash
+   # 強制的に再同期
+   ./sync-env.sh dev
+   
+   # フロントエンド再起動
+   cd frontend
+   npm run dev
+   ```
+
+### 状態確認コマンド
+
+```bash
+# Terraform状態確認
+terraform show
+
+# Vercelプロジェクト確認  
+vercel projects list
+
+# Supabaseプロジェクト確認
+supabase projects list
+```
+
+## 🔒 セキュリティ
+
+### 機密情報の管理
+
+- `terraform.tfvars` は **gitignore** に含まれています
+- API Tokens は環境変数で管理
+- パスワードは Terraform state で暗号化保存
+
+### 本番環境の保護
+
+- 本番環境では追加の承認フローを設定予定
+- S3バックエンドでstate管理
+- IAMによるアクセス制御
+
+## 📚 参考資料
+
+- [Environment Separation Design](../docs/reports/environment-separation-design.md)
+- [Supabase Terraform Analysis](../docs/reports/supabase-terraform-analysis.md)
+- [Terraform Environment Management](../docs/reports/terraform-environment-management.md)
 
 ## デプロイ手順
 
