@@ -28,11 +28,17 @@ resource "vercel_project" "brachio_frontend" {
   # monorepo のため frontend ディレクトリを指定
   root_directory = "frontend"
 
+  # monorepo対応: frontendディレクトリに変更がない場合はビルドをスキップ
+  ignore_command = "git diff --quiet HEAD^ HEAD ./frontend/"
+
   # ビルド設定
   build_command    = "npm run build"
   install_command  = "npm ci"
   output_directory = ".next"
   node_version     = "20.x"
+  
+  # monorepo 用の追加設定
+  automatically_expose_system_environment_variables = true
 
   # 環境変数
   environment = [
