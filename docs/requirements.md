@@ -47,6 +47,8 @@ TYPE 2 LIVE
 - **制限時間管理**: ゲーム時間の計測と表示
 - **ゲーム終了**: 制限時間到達時の自動終了
 - **結果表示**: 最終順位と各プレイヤーの得点表示
+- **リアルタイム同期**: Supabase Realtimeによる状態同期
+- **Lambda連携**: AWS Lambda関数からSupabase Realtime APIへの状態更新
 
 #### マッチング・ルーム機能
 
@@ -86,10 +88,14 @@ TYPE 2 LIVE
 - **レスポンス時間**: タイピング入力から判定まで100ms以内
 - **同時接続数**: 最大100プレイヤーの同時接続対応
 - **リアルタイム更新**: 得点・順位の500ms以内更新
+- **Lambda Cold Start**: 100ms以内の応答を目指す
+- **Supabase Realtime**: WebSocket接続による即座の状態同期
 
 #### 拡張性要件
-- **水平スケーリング**: サーバー負荷に応じたスケールアウト対応
+- **水平スケーリング**: AWS Lambdaの自動スケーリング対応
 - **辞書拡張**: 新しいIT用語の追加機能
+- **サーバレス**: コスト効率の良いサーバレス構成
+- **リアルタイム**: Supabase Realtimeの高可用性活用
 
 ---
 
@@ -97,24 +103,27 @@ TYPE 2 LIVE
 
 #### システム構成
 - **フロントエンド**: Next.js 14 (CSR + App Router) + TypeScript
-- **バックエンド**: Express + TypeScript
-- **リアルタイム通信**: Socket.io
+- **バックエンド**: AWS Lambda + TypeScript (サーバレス)
+- **リアルタイム通信**: Supabase Realtime
+- **データベース**: Supabase PostgreSQL
+- **API Gateway**: AWS API Gateway (REST API)
 
 #### 開発環境
 - **開発言語**: TypeScript
 - **パッケージマネージャー**: pnpm
 - **テストフレームワーク**: Jest + React Testing Library
 - **コードフォーマット**: Prettier + ESLint
-- **コンテナ**: Docker + Docker Compose
+- **サーバレス**: AWS SAM (Serverless Application Model)
+- **リアルタイムDB**: Supabase
 
 #### インフラ管理
-- **ホスティング**: Vercel
-- **コンテナ**: AWS ECS Fargate
-- **データベース**: AWS RDS PostgreSQL
-- **キャッシュ**: AWS ElastiCache Redis
-- **ロードバランサー**: AWS Application Load Balancer
+- **ホスティング**: Vercel (フロントエンド)
+- **サーバレス**: AWS Lambda
+- **API管理**: AWS API Gateway
+- **データベース**: Supabase PostgreSQL
+- **リアルタイム**: Supabase Realtime
 - **CDN**: AWS CloudFront + Vercel Edge Network
-- 
+- **認証**: Supabase Auth
 - **IaC**: Terraform
 - **CI/CD**: GitHub Actions
 - **監視**: AWS CloudWatch
@@ -127,8 +136,37 @@ TYPE 2 LIVE
 - **SEO不要ページ**: CSR (ルーム、ゲームプレイ、結果画面)
 
 #### 外部連携
+- **リアルタイム通信**: Supabase Realtime (WebSocket代替)
+- **Lambda統合**: AWS Lambda → Supabase Realtime API連携
 - **辞書API**: IT用語データの取得（必要に応じて）
-- **認証**: AWS Cognito (OAuth 2.0対応)
+- **認証**: Supabase Auth (OAuth 2.0対応)
+
+---
+
+### アーキテクチャ詳細
+
+#### サーバレス構成
+- **API Gateway + Lambda**: RESTful APIエンドポイント
+- **Lambda関数構成**:
+  - `createRoom`: ルーム作成処理
+  - `joinRoom`: ルーム参加処理
+  - `startGame`: ゲーム開始処理
+  - `submitWord`: 単語提出・得点計算処理
+  - `gameTimer`: ゲーム時間管理処理
+
+#### リアルタイム通信フロー
+1. **フロントエンド**: Supabase Realtimeに直接接続
+2. **Lambda関数**: ゲーム状態変更時にSupabase Realtime APIを呼び出し
+3. **Supabase Realtime**: 全参加者に状態変更を即座に配信
+4. **フロントエンド**: リアルタイムで状態更新を受信・反映
+
+#### データベース設計
+- **Supabase PostgreSQL**:
+  - `rooms`: ルーム情報
+  - `players`: プレイヤー情報
+  - `game_sessions`: ゲームセッション
+  - `word_submissions`: 単語提出履歴
+  - `it_terms`: IT用語辞書
 
 ---
 
