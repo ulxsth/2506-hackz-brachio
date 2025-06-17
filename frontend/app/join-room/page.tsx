@@ -2,11 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAtom } from 'jotai';
+import { joinRoomAtom, connectionStateAtom } from '@/lib/supabase-atoms';
 
 export default function JoinRoomPage() {
   const [roomCode, setRoomCode] = useState('');
+  const [playerName, setPlayerName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [, joinRoom] = useAtom(joinRoomAtom);
+  const [connectionState] = useAtom(connectionStateAtom);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,34 +25,29 @@ export default function JoinRoomPage() {
       return;
     }
 
-    // ダミー実装: バリデーション
-    await new Promise(resolve => setTimeout(resolve, 1000)); // ローディング演出
-
-    // ダミーでランダムにエラーを発生させる
-    const randomError = Math.random();
-    if (randomError < 0.3) {
-      setError('ルームが見つかりません');
-      setIsLoading(false);
-      return;
-    }
-    if (randomError < 0.5) {
-      setError('ルームが満員です');
+    if (!playerName.trim()) {
+      setError('ニックネームを入力してください');
       setIsLoading(false);
       return;
     }
 
-    // 成功時の処理
-    const roomData = {
-      code: roomCode,
-      timeLimit: 5,
-      maxPlayers: 4,
-      players: [localStorage.getItem('nickname'), 'プレイヤー1', 'プレイヤー2'],
-      isHost: false
-    };
-    localStorage.setItem('currentRoom', JSON.stringify(roomData));
-    
-    setIsLoading(false);
-    router.push('/room');
+    try {
+      const result = await joinRoom({
+        roomId: roomCode,
+        playerName: playerName
+      });
+
+      if (result.success) {
+        router.push('/room');
+      } else {
+        setError(result.error || 'ルーム参加に失敗しました');
+      }
+    } catch (error) {
+      console.error('Room join error:', error);
+      setError('ルーム参加中にエラーが発生しました');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -66,6 +66,23 @@ export default function JoinRoomPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
+              ニックネーム <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="playerName"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="あなたのニックネーム"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+              maxLength={15}
+              disabled={isLoading}
+              required
+            />
+          </div>
+
           <div>
             <label htmlFor="roomCode" className="block text-sm font-medium text-gray-700 mb-2">
               あいことば <span className="text-red-500">*</span>

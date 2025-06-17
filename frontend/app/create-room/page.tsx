@@ -2,19 +2,30 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAtom } from 'jotai';
+import { createRoomAtom, connectionStateAtom } from '@/lib/supabase-atoms';
 
 export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState('');
+  const [hostName, setHostName] = useState('');
   const [timeLimit, setTimeLimit] = useState(5);
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [category, setCategory] = useState('all');
+  const [isCreating, setIsCreating] = useState(false);
+  const [, createRoom] = useAtom(createRoomAtom);
+  const [connectionState] = useAtom(connectionStateAtom);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!roomCode.trim()) {
       alert('あいことばを入力してください');
+      return;
+    }
+
+    if (!hostName.trim()) {
+      alert('ニックネームを入力してください');
       return;
     }
 
@@ -28,18 +39,30 @@ export default function CreateRoomPage() {
       return;
     }
 
-    // ダミー実装: ルーム情報をローカルストレージに保存
-    const roomData = {
-      code: roomCode,
-      timeLimit,
-      maxPlayers,
-      category,
-      players: [localStorage.getItem('nickname')],
-      isHost: true
-    };
-    localStorage.setItem('currentRoom', JSON.stringify(roomData));
-    
-    router.push('/room');
+    setIsCreating(true);
+
+    try {
+      const result = await createRoom({
+        roomId: roomCode,
+        hostName: hostName,
+        settings: {
+          timeLimit,
+          maxPlayers,
+          category
+        }
+      });
+
+      if (result.success) {
+        router.push('/room');
+      } else {
+        alert(`ルーム作成に失敗しました: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Room creation error:', error);
+      alert('ルーム作成中にエラーが発生しました');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleBack = () => {
@@ -58,6 +81,22 @@ export default function CreateRoomPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="hostName" className="block text-sm font-medium text-gray-700 mb-2">
+              ニックネーム <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="hostName"
+              value={hostName}
+              onChange={(e) => setHostName(e.target.value)}
+              placeholder="あなたのニックネーム"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+              maxLength={15}
+              required
+            />
+          </div>
+
           <div>
             <label htmlFor="roomCode" className="block text-sm font-medium text-gray-700 mb-2">
               あいことば <span className="text-red-500">*</span>
@@ -153,17 +192,32 @@ export default function CreateRoomPage() {
             <button
               type="button"
               onClick={handleBack}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              disabled={isCreating}
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               戻る
             </button>
             <button
               type="submit"
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105"
+              disabled={isCreating}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              ルーム作成
+              {isCreating ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  作成中...
+                </div>
+              ) : (
+                'ルーム作成'
+              )}
             </button>
           </div>
+
+          {connectionState === 'connecting' && (
+            <div className="text-center text-sm text-gray-600">
+              Supabaseに接続中...
+            </div>
+          )}
         </form>
       </div>
     </div>

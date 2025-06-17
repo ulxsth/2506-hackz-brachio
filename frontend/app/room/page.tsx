@@ -1,65 +1,64 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface Player {
-  name: string;
-  isHost: boolean;
-}
+import { useAtom } from 'jotai';
+import { 
+  currentRoomAtom, 
+  playersAtom, 
+  userAtom, 
+  connectionStateAtom,
+  startGameAtom,
+  leaveRoomAtom
+} from '@/lib/supabase-atoms';
 
 export default function RoomPage() {
-  const [roomData, setRoomData] = useState<any>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [currentRoom] = useAtom(currentRoomAtom);
+  const [players] = useAtom(playersAtom);
+  const [user] = useAtom(userAtom);
+  const [connectionState] = useAtom(connectionStateAtom);
+  const [, startGame] = useAtom(startGameAtom);
+  const [, leaveRoom] = useAtom(leaveRoomAtom);
   const router = useRouter();
 
   useEffect(() => {
-    // ルーム情報の取得
-    const stored = localStorage.getItem('currentRoom');
-    if (!stored) {
+    // ルーム情報がない場合はメニューに戻る
+    if (!currentRoom || !user) {
       router.push('/menu');
       return;
     }
 
-    const data = JSON.parse(stored);
-    setRoomData(data);
+    // ゲームが開始された場合はゲーム画面に移動
+    if (currentRoom.status === 'playing') {
+      router.push('/game');
+    }
+  }, [currentRoom, user, router]);
 
-    // ダミーのプレイヤーリスト
-    const dummyPlayers: Player[] = [
-      { name: data.players[0] || 'あなた', isHost: data.isHost },
-      { name: 'タイピング王', isHost: false },
-      { name: 'コード忍者', isHost: false }
-    ];
-    setPlayers(dummyPlayers);
-
-    // ダミー: 5秒後に新しいプレイヤーを追加
-    const timer = setTimeout(() => {
-      setPlayers(prev => [...prev, { name: 'IT戦士', isHost: false }]);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [router]);
-
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     if (players.length < 2) {
       alert('2人以上で開始できます');
       return;
     }
-    router.push('/game');
+
+    const result = await startGame();
+    if (!result.success) {
+      alert(`ゲーム開始に失敗しました: ${result.error}`);
+    }
   };
 
-  const handleLeaveRoom = () => {
-    if (confirm('ルームを出ますか？')) {
-      localStorage.removeItem('currentRoom');
+  const handleLeaveRoom = async () => {
+    if (confirm('ルームを退出しますか？')) {
+      await leaveRoom();
       router.push('/menu');
     }
   };
 
-  if (!roomData) {
+  if (!currentRoom) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>;
   }
 
-  const canStartGame = roomData.isHost && players.length >= 2;
+  const isHost = user && currentRoom.host_id === user.id;
+  const canStartGame = isHost && players.length >= 2;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4">
@@ -70,6 +69,9 @@ export default function RoomPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">ルーム待機中</h1>
           <p className="text-gray-600">参加者を待っています...</p>
+          {connectionState === 'connecting' && (
+            <p className="text-sm text-blue-600">Supabase接続中...</p>
+          )}
         </div>
 
         {/* ルーム情報 */}
@@ -79,16 +81,16 @@ export default function RoomPage() {
             <div>
               <span className="text-gray-600">あいことば:</span>
               <span className="ml-2 font-mono bg-white px-2 py-1 rounded font-bold text-indigo-600">
-                {roomData.code}
+                {currentRoom.id}
               </span>
             </div>
             <div>
               <span className="text-gray-600">制限時間:</span>
-              <span className="ml-2 font-semibold">{roomData.timeLimit}分</span>
+              <span className="ml-2 font-semibold">{currentRoom.settings.timeLimit}分</span>
             </div>
             <div>
               <span className="text-gray-600">参加者数:</span>
-              <span className="ml-2 font-semibold">{players.length}/{roomData.maxPlayers}人</span>
+              <span className="ml-2 font-semibold">{players.length}/{currentRoom.settings.maxPlayers}人</span>
             </div>
           </div>
         </div>
@@ -97,9 +99,9 @@ export default function RoomPage() {
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">参加者一覧</h2>
           <div className="space-y-3">
-            {players.map((player, index) => (
+            {players.map((player) => (
               <div
-                key={index}
+                key={player.id}
                 className="flex items-center justify-between bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors"
               >
                 <div className="flex items-center space-x-3">
@@ -108,7 +110,7 @@ export default function RoomPage() {
                   </div>
                   <div>
                     <span className="font-semibold text-gray-800">{player.name}</span>
-                    {player.isHost && (
+                    {player.is_host && (
                       <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
                         👑 ホスト
                       </span>
@@ -144,7 +146,7 @@ export default function RoomPage() {
             ルームを出る
           </button>
           
-          {roomData.isHost ? (
+          {isHost ? (
             <button
               onClick={handleStartGame}
               disabled={!canStartGame}
