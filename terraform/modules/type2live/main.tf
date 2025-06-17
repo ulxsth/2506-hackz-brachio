@@ -30,7 +30,7 @@ locals {
       jwt_expiry      = 3600
       site_url        = "http://localhost:3000"
       git_branch      = "develop"
-      enable_signups  = true
+      # enable_signups は削除 - TYPE 2 LIVE はユーザー登録機能不要
       node_env        = "development"
     }
     staging = {
@@ -40,7 +40,7 @@ locals {
       jwt_expiry      = 7200
       site_url        = "https://staging-type2live.vercel.app"
       git_branch      = "staging"
-      enable_signups  = true
+      # enable_signups は削除 - TYPE 2 LIVE はユーザー登録機能不要
       node_env        = "production"
     }
     prod = {
@@ -50,7 +50,7 @@ locals {
       jwt_expiry      = 7200
       site_url        = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://type2live.vercel.app"
       git_branch      = "main"
-      enable_signups  = var.enable_signups
+      # enable_signups は削除 - TYPE 2 LIVE はユーザー登録機能不要
       node_env        = "production"
     }
   }
@@ -85,7 +85,7 @@ resource "supabase_settings" "main" {
     site_url                 = local.current_config.site_url
     additional_redirect_urls = concat([local.current_config.site_url], var.additional_redirect_urls)
     jwt_expiry              = local.current_config.jwt_expiry
-    enable_signup           = local.current_config.enable_signups
+    # enable_signup は削除 - TYPE 2 LIVE はニックネームベースでユーザー登録不要
     enable_confirmations    = var.environment == "prod"
     password_min_length     = var.environment == "prod" ? 8 : 6
   })

@@ -1,0 +1,15 @@
+# Production環境用の設定ファイル
+# このファイルをコピーして terraform.tfvars として使用してください
+
+# GitHub リポジトリ (必須)
+github_repo = "your-username/2506-hackz-brachio"
+
+# Supabase 設定 (必須)
+supabase_organization_id = "your-supabase-org-id"
+supabase_database_password = "your-ultra-secure-production-password"
+
+# 環境固有の設定はvariables.tfのdefault値を使用
+# 本番環境では以下の設定を慎重に検討:
+# site_url = "https://type2live.com"
+# additional_redirect_urls = ["https://type2live.com", "https://www.type2live.com"]
+# enable_sign_ups = false  # 招待制にする場合

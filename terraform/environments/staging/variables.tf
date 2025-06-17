@@ -21,20 +21,19 @@ variable "supabase_region" {
   default     = "ap-northeast-1"
 }
 
-# 環境固有の設定
+# 環境固有の設定 (Staging)
 variable "site_url" {
   description = "サイトのメインURL"
   type        = string
-  default     = "http://localhost:3000"
+  default     = "https://staging-type2live.vercel.app"
 }
 
 variable "additional_redirect_urls" {
   description = "追加のリダイレクトURL"
   type        = list(string)
   default     = [
-    "http://localhost:3000",
-    "https://localhost:3000",
-    "http://127.0.0.1:3000",
+    "https://staging-type2live.vercel.app",
+    "https://staging-*.vercel.app"
   ]
 }
 

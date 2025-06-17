@@ -1,0 +1,15 @@
+# Staging環境用の設定ファイル
+# このファイルをコピーして terraform.tfvars として使用してください
+
+# GitHub リポジトリ (必須)
+github_repo = "your-username/2506-hackz-brachio"
+
+# Supabase 設定 (必須)
+supabase_organization_id = "your-supabase-org-id"
+supabase_database_password = "your-secure-staging-password"
+
+# 環境固有の設定はvariables.tfのdefault値を使用
+# 必要に応じて以下をオーバーライド可能:
+# site_url = "https://custom-staging-domain.com"
+# additional_redirect_urls = ["https://custom-staging-domain.com"]
+# enable_sign_ups = false

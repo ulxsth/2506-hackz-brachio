@@ -35,11 +35,7 @@ variable "custom_domain" {
   default     = ""
 }
 
-variable "enable_signups" {
-  description = "Enable user signups (production only)"
-  type        = bool
-  default     = true
-}
+# enable_signups は削除 - TYPE 2 LIVE はニックネームベースでユーザー登録不要
 
 variable "additional_redirect_urls" {
   description = "Additional redirect URLs"

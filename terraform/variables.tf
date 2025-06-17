@@ -44,17 +44,11 @@ variable "environment" {
 variable "site_url" {
   description = "サイトのメインURL"
   type        = string
-  default     = "http://localhost:3000"
 }
 
 variable "additional_redirect_urls" {
   description = "追加のリダイレクトURL"
   type        = list(string)
-  default     = ["http://localhost:3000", "https://localhost:3000"]
 }
 
-variable "enable_sign_ups" {
-  description = "サインアップを有効にするか"
-  type        = bool
-  default     = true
-}
+# enable_sign_ups は削除 - TYPE 2 LIVE はニックネームベースでユーザー登録不要
