@@ -13,14 +13,16 @@ export type Updates<T extends keyof Database['public']['Tables']> = Database['pu
 
 // 使いやすい型エイリアス
 export type Room = Tables<'rooms'>
-export type Player = Tables<'players'>
+export type RoomPlayer = Tables<'room_players'>
 export type GameSession = Tables<'game_sessions'>
 export type WordSubmission = Tables<'word_submissions'>
 export type ITTerm = Tables<'it_terms'>
+export type Category = Tables<'categories'>
+export type Difficulty = Tables<'difficulties'>
 
 // Realtime Types - 型安全なリアルタイム通信用
 export interface RealtimeRoom extends Room {
-  players: Player[]
+  players: RoomPlayer[]
 }
 
 export interface RealtimeGameUpdate {

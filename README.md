@@ -72,3 +72,46 @@ npx supabase login                           # Supabaseにログイン
 npx supabase link --project-ref <project>   # リモートプロジェクトとリンク
 npx supabase db pull                         # リモートスキーマを取得
 ```
+
+## 🗄️ Database Schema
+
+### 正規化されたスキーマ構成
+
+```
+categories        -- IT用語カテゴリーマスター
+difficulties      -- 難易度レベルマスター  
+rooms             -- ルーム管理
+room_players      -- ルーム参加プレイヤー (旧: players)
+game_sessions     -- ゲームセッション管理
+word_submissions  -- 単語提出履歴
+it_terms          -- IT用語辞書（正規化版）
+```
+
+### 主な変更点 📋
+
+1. **テーブル正規化**: 
+   - `it_terms.category` → `categories` テーブル + `category_id` FK
+   - `it_terms.difficulty` → `difficulties` テーブル + `difficulty_id` FK
+   - `it_terms.aliases[]` カラム削除（とりあえず不要）
+
+2. **テーブル名変更**:
+   - `players` → `room_players` (ユーザテーブルとの混同回避)
+
+### スキーマ確認
+
+```bash
+# 現在のスキーマ確認
+npx supabase db dump --local --data-only=false > schema.sql
+
+# テーブル一覧確認
+psql postgresql://postgres:postgres@localhost:54322/postgres -c "\dt"
+```
+
+---
+
+## 📚 Documentation
+
+- [Supabase Setup Guide](./docs/supabase-setup.md) - Supabase詳細設定
+- [Supabase CLI Setup](./docs/supabase-cli-setup.md) - CLI導入手順  
+- [Requirements](./docs/requirements.md) - 要件定義
+- [Roadmap](./docs/roadmap.md) - 開発ロードマップ

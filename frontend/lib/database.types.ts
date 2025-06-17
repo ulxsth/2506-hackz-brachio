@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
-          extensions?: Json
+          variables?: Json
           operationName?: string
           query?: string
-          variables?: Json
+          extensions?: Json
         }
         Returns: Json
       }
@@ -34,6 +34,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      difficulties: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          level: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          level: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          level?: number
+          name?: string
+        }
+        Relationships: []
+      }
       game_sessions: {
         Row: {
           created_at: string
@@ -74,38 +119,50 @@ export type Database = {
       }
       it_terms: {
         Row: {
-          aliases: string[] | null
-          category: string
+          category_id: number
           created_at: string
           description: string | null
-          difficulty: number
+          difficulty_id: number
           id: string
           term: string
           updated_at: string
         }
         Insert: {
-          aliases?: string[] | null
-          category: string
+          category_id: number
           created_at?: string
           description?: string | null
-          difficulty: number
+          difficulty_id: number
           id?: string
           term: string
           updated_at?: string
         }
         Update: {
-          aliases?: string[] | null
-          category?: string
+          category_id?: number
           created_at?: string
           description?: string | null
-          difficulty?: number
+          difficulty_id?: number
           id?: string
           term?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "it_terms_new_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "it_terms_new_difficulty_id_fkey"
+            columns: ["difficulty_id"]
+            isOneToOne: false
+            referencedRelation: "difficulties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      players: {
+      room_players: {
         Row: {
           combo: number
           created_at: string
@@ -213,7 +270,7 @@ export type Database = {
             foreignKeyName: "word_submissions_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
-            referencedRelation: "players"
+            referencedRelation: "room_players"
             referencedColumns: ["id"]
           },
         ]
