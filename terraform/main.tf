@@ -40,12 +40,12 @@ resource "vercel_project" "brachio_frontend" {
   environment = [
     {
       key    = "NEXT_PUBLIC_SUPABASE_URL"
-      value  = "https://ffrtsviptdnxfwexutpm.supabase.co"
+      value  = "https://tgpuwjowroeoibzuktjj.supabase.co"
       target = ["production", "preview", "development"]
     },
     {
       key    = "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-      value  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmcnRzdmlwdGRueGZ3ZXh1dHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMzk3NzYsImV4cCI6MjA2NTcxNTc3Nn0.d4LtJ7kH1UGnGavIxxlYZjUAHiBnfTwYfea6qG88OyA"
+      value  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRncHV3am93cm9lb2lienVrdGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMjYwMjUsImV4cCI6MjA2NTcwMjAyNX0._dpf9xLIUVlTsX1gdvIRQN4AXvzQ0GjVxCkv1yIuaXw"
       target = ["production", "preview", "development"]
     }
   ]
