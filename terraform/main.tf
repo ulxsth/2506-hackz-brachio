@@ -37,7 +37,6 @@ resource "vercel_project" "brachio_frontend" {
   # monorepo 用の追加設定
   automatically_expose_system_environment_variables = true
 
-  # 環境変数 - 実際の値をSupabase Dashboardから取得してください
   environment = [
     {
       key    = "NEXT_PUBLIC_SUPABASE_URL"
