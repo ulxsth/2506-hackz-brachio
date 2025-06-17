@@ -24,7 +24,8 @@ locals {
   # 環境別設定
   env_config = {
     dev = {
-      instance_size    = "micro"
+      # instance_size は無料プランでは指定不可のためコメントアウト
+      # instance_size    = "micro"
       max_connections  = 200
       api_max_rows    = 100
       jwt_expiry      = 3600
@@ -34,7 +35,7 @@ locals {
       node_env        = "development"
     }
     staging = {
-      instance_size    = "small"
+      # instance_size    = "small"
       max_connections  = 500
       api_max_rows    = 500
       jwt_expiry      = 7200
@@ -44,7 +45,7 @@ locals {
       node_env        = "production"
     }
     prod = {
-      instance_size    = "medium"
+      # instance_size    = "medium"  # 有料プランでのみ指定可能
       max_connections  = 1000
       api_max_rows    = 1000
       jwt_expiry      = 7200
@@ -64,7 +65,8 @@ resource "supabase_project" "main" {
   name              = "type2live-${var.environment}"
   database_password = var.supabase_database_password
   region            = var.supabase_region
-  instance_size     = local.current_config.instance_size
+  # instance_size は無料プランでは指定不可
+  # instance_size     = local.current_config.instance_size
 
   lifecycle {
     ignore_changes = [database_password]
@@ -89,6 +91,11 @@ resource "supabase_settings" "main" {
     enable_confirmations    = var.environment == "prod"
     password_min_length     = var.environment == "prod" ? 8 : 6
   })
+}
+
+# Supabase API キーを取得
+data "supabase_apikeys" "main" {
+  project_ref = supabase_project.main.id
 }
 
 # Vercel プロジェクト
@@ -125,12 +132,12 @@ resource "vercel_project" "main" {
       },
       {
         key    = "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-        value  = supabase_project.main.anon_key
+        value  = data.supabase_apikeys.main.anon_key
         target = ["production", "preview", "development"]
       },
       {
         key    = "SUPABASE_SERVICE_ROLE_KEY"
-        value  = supabase_project.main.service_role_key
+        value  = data.supabase_apikeys.main.service_role_key
         target = var.environment == "dev" ? ["development"] : ["production", "preview"]
       },
       # アプリケーション設定
@@ -164,9 +171,11 @@ resource "vercel_project" "main" {
 }
 
 # カスタムドメイン（本番のみ）
-resource "vercel_domain" "main" {
-  count = var.environment == "prod" && var.custom_domain != "" ? 1 : 0
-  
-  name       = var.custom_domain
-  project_id = vercel_project.main.id
-}
+# Note: vercel_domain リソースは現在のVercelプロバイダーでは利用できません
+# カスタムドメインはVercel Dashboardから手動で設定してください
+# resource "vercel_domain" "main" {
+#   count = var.environment == "prod" && var.custom_domain != "" ? 1 : 0
+#   
+#   name       = var.custom_domain
+#   project_id = vercel_project.main.id
+# }

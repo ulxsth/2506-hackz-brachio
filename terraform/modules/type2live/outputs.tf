@@ -10,19 +10,20 @@ output "supabase_url" {
 
 output "supabase_anon_key" {
   description = "Supabase Anonymous Key"
-  value       = supabase_project.main.anon_key
+  value       = data.supabase_apikeys.main.anon_key
   sensitive   = true
 }
 
 output "supabase_service_role_key" {
   description = "Supabase Service Role Key"
-  value       = supabase_project.main.service_role_key
+  value       = data.supabase_apikeys.main.service_role_key
   sensitive   = true
 }
 
+# データベースURLは直接取得できないため、構築する
 output "supabase_database_url" {
   description = "Supabase Database URL"
-  value       = supabase_project.main.database_url
+  value       = "postgresql://postgres:${var.supabase_database_password}@db.${supabase_project.main.id}.supabase.co:5432/postgres"
   sensitive   = true
 }
 
@@ -43,8 +44,10 @@ output "environment_summary" {
     supabase_url     = "https://${supabase_project.main.id}.supabase.co"
     vercel_url       = "https://${vercel_project.main.name}.vercel.app"
     git_branch       = local.current_config.git_branch
-    instance_size    = local.current_config.instance_size
+    # instance_size は無料プランでは指定不可のため削除
+    # instance_size    = local.current_config.instance_size
     site_url         = local.current_config.site_url
+    plan_type        = "free"  # 現在は無料プランを想定
   }
 }
 

@@ -54,9 +54,6 @@ export SUPABASE_ACCESS_TOKEN="your_supabase_token"
 # 開発環境用設定ファイル作成
 cd terraform/environments/dev
 cp terraform.tfvars.example terraform.tfvars
-
-# terraform.tfvars を編集
-vim terraform.tfvars
 ```
 
 ### 4. 設定項目
@@ -139,176 +136,217 @@ terraform output -raw supabase_anon_key
 terraform output -raw supabase_service_role_key
 ```
 
-## 📊 運用フロー
+## 📝 環境変数の永続化設定
 
-### 1. 日常的な開発
+### 方法1: bashrc/zshrc を使用（推奨）
 
 ```bash
-# 1. 機能開発
-git checkout -b feature/new-function
-# ... 開発 ...
-git push origin feature/new-function
-# → Vercel自動プレビューデプロイ
+# ホームディレクトリの設定ファイルに追加
+echo 'export VERCEL_API_TOKEN="your_vercel_token"' >> ~/.bashrc
+echo 'export SUPABASE_ACCESS_TOKEN="your_supabase_token"' >> ~/.bashrc
 
-# 2. 開発環境テスト
-git checkout develop
-git merge feature/new-function
-git push origin develop
-# → dev環境で動作確認
+# 設定を反映
+source ~/.bashrc
 
-# 3. インフラ変更が必要な場合
-cd terraform/environments/dev
-terraform plan
-terraform apply
-./sync-env.sh dev
+# zsh を使用している場合は ~/.zshrc を使用
+echo 'export VERCEL_API_TOKEN="your_vercel_token"' >> ~/.zshrc
+echo 'export SUPABASE_ACCESS_TOKEN="your_supabase_token"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
-### 2. リリースフロー
+### 方法2: .env ファイルを使用
 
 ```bash
-# 1. ステージング環境デプロイ
-git checkout staging
-git merge develop
-git push origin staging
+# プロジェクトルートに .env ファイル作成
+cp .env.example .env
 
-# 2. ステージング環境でテスト
-cd terraform/environments/staging
-terraform apply
+# .env ファイルを編集
+nano .env  # または code .env
 
-# 3. 本番環境デプロイ
-git checkout main  
-git merge staging
-git push origin main
-
-# 4. 本番環境でデプロイ
-cd terraform/environments/prod
-terraform apply
+# .env を読み込む
+set -a && source .env && set +a
 ```
 
-## 🛠️ トラブルシューティング
-
-### よくある問題
-
-1. **Terraform state が見つからない**
-   ```bash
-   cd terraform/environments/dev
-   terraform init
-   ```
-
-2. **Supabase認証エラー**
-   ```bash
-   # Access Tokenを再確認
-   echo $SUPABASE_ACCESS_TOKEN
-   
-   # 新しいTokenを取得して設定
-   export SUPABASE_ACCESS_TOKEN="new_token"
-   ```
-
-3. **環境変数が反映されない**
-   ```bash
-   # 強制的に再同期
-   ./sync-env.sh dev
-   
-   # フロントエンド再起動
-   cd frontend
-   npm run dev
-   ```
-
-### 状態確認コマンド
+### 方法3: direnv を使用（開発者向け）
 
 ```bash
-# Terraform状態確認
-terraform show
+# direnv をインストール
+# macOS
+brew install direnv
 
-# Vercelプロジェクト確認  
-vercel projects list
+# Ubuntu/Debian
+sudo apt install direnv
 
-# Supabaseプロジェクト確認
-supabase projects list
+# シェル設定に追加
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc  # bash の場合
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc   # zsh の場合
+
+# 設定を反映
+source ~/.bashrc  # または source ~/.zshrc
+
+# プロジェクトルートに .envrc ファイル作成
+cat > .envrc << 'EOF'
+export VERCEL_API_TOKEN=your_vercel_token
+export SUPABASE_ACCESS_TOKEN=your_supabase_token
+EOF
+
+# 許可設定
+direnv allow
 ```
 
-## 🔒 セキュリティ
-
-### 機密情報の管理
-
-- `terraform.tfvars` は **gitignore** に含まれています
-- API Tokens は環境変数で管理
-- パスワードは Terraform state で暗号化保存
-
-### 本番環境の保護
-
-- 本番環境では追加の承認フローを設定予定
-- S3バックエンドでstate管理
-- IAMによるアクセス制御
-
-## 📚 参考資料
-
-- [Environment Separation Design](../docs/reports/environment-separation-design.md)
-- [Supabase Terraform Analysis](../docs/reports/supabase-terraform-analysis.md)
-- [Terraform Environment Management](../docs/reports/terraform-environment-management.md)
-
-## デプロイ手順
-
-### 初回デプロイ
+### 環境変数の確認
 
 ```bash
-# Terraform 初期化
+# 設定されているか確認
+echo "VERCEL_API_TOKEN: ${VERCEL_API_TOKEN:+設定済み}"
+echo "SUPABASE_ACCESS_TOKEN: ${SUPABASE_ACCESS_TOKEN:+設定済み}"
+
+# 実際の値を確認（デバッグ時のみ）
+# echo $VERCEL_API_TOKEN
+# echo $SUPABASE_ACCESS_TOKEN
+```
+
+## 🚨 トラブルシューティング
+
+### プロバイダーエラーの解決
+
+エラー例：
+```
+Error: Failed to query available provider packages
+Could not retrieve the list of available versions for provider hashicorp/vercel
+```
+
+**解決方法：**
+1. `.terraform` ディレクトリを削除
+2. `terraform init` を再実行
+
+```bash
+rm -rf .terraform
 terraform init
-
-# プラン確認
-terraform plan
-
-# デプロイ実行
-terraform apply
 ```
 
-### 更新デプロイ
+### 環境変数が認識されない場合
 
 ```bash
-terraform plan
-terraform apply
+# 1. 環境変数を再設定
+unset VERCEL_API_TOKEN SUPABASE_ACCESS_TOKEN
+export VERCEL_API_TOKEN="your_token"
+export SUPABASE_ACCESS_TOKEN="your_token"
+
+# 2. 新しいターミナルセッションで確認
+echo $VERCEL_API_TOKEN
+
+# 3. それでも問題がある場合は、terraform に直接渡す
+TF_VAR_vercel_token="your_token" terraform plan
 ```
 
-## 主要なリソース
+### terraform.tfvars の重複エラー
 
-- **vercel_project**: メインの Next.js プロジェクト
-- **vercel_project_domain**: カスタムドメイン設定
-- **vercel_project (API)**: API サーバー（オプション）
+エラー例：
+```
+Error: Attribute redefined
+The argument "github_repo" was already set at terraform.tfvars:2,1-12. 
+Each argument may be set only once.
+```
 
-## 自動デプロイ
+**原因：** terraform.tfvarsファイル内で同じ変数が複数回定義されている
 
-Git 連携により以下が自動で実行されます：
-
-- `main` ブランチへの push → 本番デプロイ
-- PR 作成 → プレビューデプロイ
-- その他のブランチへの push → プレビューデプロイ
-
-## トラブルシューティング
-
-### よくあるエラー
-
-1. **API Token エラー**: `VERCEL_API_TOKEN` 環境変数を確認
-2. **リポジトリアクセスエラー**: GitHub の Vercel アプリ連携を確認
-3. **ドメインエラー**: DNS 設定を確認
-
-### ログ確認
-
+**解決方法：**
 ```bash
-# Terraform ログ
-terraform show
+# terraform.tfvars ファイルを確認
+cat terraform.tfvars
 
-# Vercel ダッシュボード
-# https://vercel.com/dashboard でデプロイ状況を確認
+# 重複した行を削除（エディタで編集）
+nano terraform.tfvars
 ```
 
-## ファイル構成
+**正しい terraform.tfvars の例：**
+```hcl
+# 各変数は1回のみ定義
+github_repo = "your-username/repo-name"
+supabase_organization_id = "your-org-id"
+supabase_database_password = "your-password"
+supabase_region = "ap-northeast-1"
+```
 
+### よくあるエラーと対処法
+
+| エラーメッセージ | 原因 | 解決方法 |
+|------------------|------|----------|
+| `provider registry ... does not have a provider` | プロバイダーソース未指定 | `required_providers` ブロックを追加 |
+| `Authentication failed` | トークンが無効 | トークンを再生成・再設定 |
+| `terraform.tfvars: No such file` | 設定ファイル未作成 | `terraform.tfvars.example` をコピー |
+
+### Supabase/Vercel プロバイダーの属性エラー
+
+エラー例：
 ```
-terraform/
-├── main.tf                    # メイン設定
-├── variables.tf               # 変数定義
-├── outputs.tf                 # 出力値
-├── terraform.tfvars.example   # 設定サンプル
-├── terraform.tfvars           # 実際の設定（Git除外）
-└── README.md                  # このファイル
+Error: Unsupported attribute
+This object has no argument, nested block, or exported attribute named "anon_key".
 ```
+
+**原因：** Supabaseプロバイダーの最新版では、API キーは `supabase_apikeys` データソースから取得する必要があります
+
+**解決方法：**
+1. 古い直接参照を削除
+2. `data.supabase_apikeys` データソースを使用
+
+```hcl
+# ❌ 古い方法
+value = supabase_project.main.anon_key
+
+# ✅ 正しい方法
+data "supabase_apikeys" "main" {
+  project_ref = supabase_project.main.id
+}
+
+value = data.supabase_apikeys.main.anon_key
+```
+
+### vercel_domain リソースエラー
+
+エラー例：
+```
+Error: Invalid resource type
+The provider vercel/vercel does not support resource type "vercel_domain".
+```
+
+**原因：** Vercelプロバイダーで `vercel_domain` リソースが利用できません
+
+**解決方法：**
+- カスタムドメインは **Vercel Dashboard** から手動で設定
+- Terraform設定をコメントアウト
+
+```hcl
+# カスタムドメインは手動設定
+# resource "vercel_domain" "main" { ... }
+```
+
+### Supabase 無料プランのinstance_sizeエラー
+
+エラー例：
+```
+Error: Client Error
+Unable to create project, got status 402: 
+{"message":"Instance size cannot be specified for free plan organizations."}
+```
+
+**原因：** Supabase無料プランでは `instance_size` パラメータを指定できません
+
+**解決方法：**
+`supabase_project` リソースから `instance_size` を削除
+
+```hcl
+resource "supabase_project" "main" {
+  organization_id   = var.supabase_organization_id
+  name              = "project-name"
+  database_password = var.supabase_database_password
+  region            = var.supabase_region
+  # instance_size は無料プランでは指定不可
+  # instance_size   = "micro"
+}
+```
+
+**📝 補足：**
+- 無料プランでは自動的に最小インスタンスが使用されます
+- 有料プランでは `instance_size` を指定可能：`micro`, `small`, `medium`, `large`, `xlarge`, `2xlarge`, `4xlarge`, `8xlarge`, `12xlarge`, `16xlarge`

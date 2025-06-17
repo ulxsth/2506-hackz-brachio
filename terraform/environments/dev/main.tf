@@ -1,6 +1,17 @@
 terraform {
   required_version = ">= 1.0"
   
+  required_providers {
+    vercel = {
+      source  = "vercel/vercel"
+      version = "~> 3.0"
+    }
+    supabase = {
+      source  = "supabase/supabase"
+      version = "~> 1.5"
+    }
+  }
+  
   backend "local" {
     path = "terraform-dev.tfstate"
   }
