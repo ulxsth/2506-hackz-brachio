@@ -3,33 +3,38 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { createRoomAtom, connectionStateAtom } from '@/lib/supabase-atoms';
+import { createRoomAtom, connectionStateAtom, errorAtom, clearErrorAtom } from '@/lib/supabase-atoms';
 
 export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState('');
   const [timeLimit, setTimeLimit] = useState(5);
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [category, setCategory] = useState('all');
+  const [error, setError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [, createRoom] = useAtom(createRoomAtom);
   const [connectionState] = useAtom(connectionStateAtom);
+  const [globalError, setGlobalError] = useAtom(errorAtom);
+  const [, clearError] = useAtom(clearErrorAtom);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    clearError(); // 【🤔】グローバルエラーもクリア
     
     if (!roomCode.trim()) {
-      alert('あいことばを入力してください');
+      setError('あいことばを入力してください');
       return;
     }
 
     if (roomCode.length < 1 || roomCode.length > 30) {
-      alert('あいことばは1文字以上30文字以下で入力してください');
+      setError('あいことばは1文字以上30文字以下で入力してください');
       return;
     }
 
     if (maxPlayers < 2 || maxPlayers > 100) {
-      alert('最大人数は2人以上100人以下で設定してください');
+      setError('最大人数は2人以上100人以下で設定してください');
       return;
     }
 
@@ -48,11 +53,11 @@ export default function CreateRoomPage() {
       if (result.success) {
         router.push('/room');
       } else {
-        alert(`ルーム作成に失敗しました: ${result.error}`);
+        setError(result.error || 'ルーム作成に失敗しました');
       }
     } catch (error) {
       console.error('Room creation error:', error);
-      alert('ルーム作成中にエラーが発生しました');
+      setError('ルーム作成中にエラーが発生しました');
     } finally {
       setIsCreating(false);
     }
@@ -72,6 +77,19 @@ export default function CreateRoomPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">ルームを作成</h1>
           <p className="text-gray-600">新しいゲームルームを作成します</p>
         </div>
+
+        {(error || globalError) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <span className="text-red-400">⚠️</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800">{error || globalError}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

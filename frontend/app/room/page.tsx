@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { 
@@ -9,7 +9,8 @@ import {
   userAtom, 
   connectionStateAtom,
   startGameAtom,
-  leaveRoomAtom
+  leaveRoomAtom,
+  errorAtom
 } from '@/lib/supabase-atoms';
 
 export default function RoomPage() {
@@ -19,6 +20,8 @@ export default function RoomPage() {
   const [connectionState] = useAtom(connectionStateAtom);
   const [, startGame] = useAtom(startGameAtom);
   const [, leaveRoom] = useAtom(leaveRoomAtom);
+  const [globalError] = useAtom(errorAtom);
+  const [error, setError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -35,14 +38,16 @@ export default function RoomPage() {
   }, [currentRoom, user, router]);
 
   const handleStartGame = async () => {
+    setError('');
+    
     if (players.length < 2) {
-      alert('2人以上で開始できます');
+      setError('2人以上で開始できます');
       return;
     }
 
     const result = await startGame();
     if (!result.success) {
-      alert(`ゲーム開始に失敗しました: ${result.error}`);
+      setError(result.error || 'ゲーム開始に失敗しました');
     }
   };
 
@@ -59,6 +64,7 @@ export default function RoomPage() {
 
   const isHost = user && currentRoom.host_id === user.id;
   const canStartGame = isHost && players.length >= 2;
+  const settings = currentRoom.settings as { timeLimit: number; maxPlayers: number; category: string };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4">
@@ -74,6 +80,19 @@ export default function RoomPage() {
           )}
         </div>
 
+        {(error || globalError) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <span className="text-red-400">⚠️</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800">{error || globalError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ルーム情報 */}
         <div className="bg-gray-50 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">ルーム情報</h2>
@@ -86,11 +105,11 @@ export default function RoomPage() {
             </div>
             <div>
               <span className="text-gray-600">制限時間:</span>
-              <span className="ml-2 font-semibold">{currentRoom.settings.timeLimit}分</span>
+              <span className="ml-2 font-semibold">{settings.timeLimit}分</span>
             </div>
             <div>
               <span className="text-gray-600">参加者数:</span>
-              <span className="ml-2 font-semibold">{players.length}/{currentRoom.settings.maxPlayers}人</span>
+              <span className="ml-2 font-semibold">{players.length}/{settings.maxPlayers}人</span>
             </div>
           </div>
         </div>

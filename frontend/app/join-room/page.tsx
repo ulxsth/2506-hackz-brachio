@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { joinRoomAtom, connectionStateAtom } from '@/lib/supabase-atoms';
+import { joinRoomAtom, connectionStateAtom, errorAtom } from '@/lib/supabase-atoms';
 
 export default function JoinRoomPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -12,6 +12,7 @@ export default function JoinRoomPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [, joinRoom] = useAtom(joinRoomAtom);
   const [connectionState] = useAtom(connectionStateAtom);
+  const [globalError] = useAtom(errorAtom);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,12 +100,12 @@ export default function JoinRoomPage() {
             />
           </div>
 
-          {error && (
+          {(error || globalError) && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
               <span className="text-red-500 text-xl">⚠️</span>
               <div>
                 <p className="text-red-700 font-medium">参加できませんでした</p>
-                <p className="text-red-600 text-sm">{error}</p>
+                <p className="text-red-600 text-sm">{error || globalError}</p>
               </div>
             </div>
           )}

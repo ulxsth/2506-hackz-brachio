@@ -17,6 +17,17 @@ export const playersAtom = atom<RoomPlayer[]>([])
 // Realtimeチャンネル
 export const realtimeChannelAtom = atom<RealtimeChannel | null>(null)
 
+// エラー管理
+export const errorAtom = atom<string | null>(null)
+
+// エラークリア
+export const clearErrorAtom = atom(
+  null,
+  (get, set) => {
+    set(errorAtom, null)
+  }
+)
+
 // ルーム作成
 export const createRoomAtom = atom(
   null,
@@ -26,6 +37,7 @@ export const createRoomAtom = atom(
   }) => {
     try {
       set(connectionStateAtom, 'connecting')
+      set(errorAtom, null) // エラークリア
       
       // ユーザー作成
       const user = { id: crypto.randomUUID(), name: 'Host' }
@@ -43,7 +55,13 @@ export const createRoomAtom = atom(
         .select()
         .single()
       
-      if (roomError) throw roomError
+      if (roomError) {
+        // 重複するあいことば（Primary Key制約違反）をチェック
+        if (roomError.code === '23505' && roomError.message.includes('rooms_pkey')) {
+          throw new Error('このあいことばは既に使用されています。別のあいことばを入力してください。')
+        }
+        throw roomError
+      }
       
       // プレイヤー作成（ホスト）
       const { data: playerData, error: playerError } = await supabase
@@ -73,7 +91,6 @@ export const createRoomAtom = atom(
           filter: `room_id=eq.${roomId}`
         }, 
         (payload) => {
-          console.log('New player joined:', payload.new)
           set(playersAtom, (prev) => [...prev, payload.new as RoomPlayer])
         }
       )
@@ -87,7 +104,6 @@ export const createRoomAtom = atom(
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          console.log('Player left:', payload.old)
           set(playersAtom, (prev) => prev.filter(p => p.id !== payload.old.id))
         }
       )
@@ -101,7 +117,6 @@ export const createRoomAtom = atom(
           filter: `id=eq.${roomId}`
         },
         (payload) => {
-          console.log('Room updated:', payload.new)
           set(currentRoomAtom, (prev) => prev ? { ...prev, ...payload.new } : null)
         }
       )
@@ -117,9 +132,10 @@ export const createRoomAtom = atom(
       return { success: true, room: roomData }
       
     } catch (error) {
-      console.error('Failed to create room:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      set(errorAtom, errorMessage)
       set(connectionStateAtom, 'disconnected')
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      return { success: false, error: errorMessage }
     }
   }
 )
@@ -130,6 +146,7 @@ export const joinRoomAtom = atom(
   async (get, set, { roomId, playerName }: { roomId: string; playerName: string }) => {
     try {
       set(connectionStateAtom, 'connecting')
+      set(errorAtom, null) // エラークリア
       
       // ルーム存在確認
       const { data: roomData, error: roomError } = await supabase
@@ -140,13 +157,16 @@ export const joinRoomAtom = atom(
         .single()
       
       if (roomError || !roomData) {
-        throw new Error('Room not found or already started')
+        if (roomError?.code === 'PGRST116') {
+          throw new Error('入力されたあいことばのルームが見つかりません。あいことばを確認してください。')
+        }
+        throw new Error('ルームが見つからないか、既にゲームが開始されています。')
       }
       
       // 参加人数チェック
       const settings = roomData.settings as { maxPlayers: number; timeLimit: number; category: string }
       if (roomData.players && roomData.players.length >= settings.maxPlayers) {
-        throw new Error('Room is full')
+        throw new Error('ルームの定員に達しています。別のルームに参加してください。')
       }
       
       // ユーザー作成
@@ -181,7 +201,6 @@ export const joinRoomAtom = atom(
           filter: `room_id=eq.${roomId}`
         }, 
         (payload) => {
-          console.log('New player joined:', payload.new)
           set(playersAtom, (prev) => [...prev, payload.new as RoomPlayer])
         }
       )
@@ -194,7 +213,6 @@ export const joinRoomAtom = atom(
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          console.log('Player left:', payload.old)
           set(playersAtom, (prev) => prev.filter(p => p.id !== payload.old.id))
         }
       )
@@ -207,7 +225,6 @@ export const joinRoomAtom = atom(
           filter: `id=eq.${roomId}`
         },
         (payload) => {
-          console.log('Room updated:', payload.new)
           set(currentRoomAtom, (prev) => prev ? { ...prev, ...payload.new } : null)
         }
       )
@@ -225,9 +242,10 @@ export const joinRoomAtom = atom(
       return { success: true, room: roomData }
       
     } catch (error) {
-      console.error('Failed to join room:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      set(errorAtom, errorMessage)
       set(connectionStateAtom, 'disconnected')
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      return { success: false, error: errorMessage }
     }
   }
 )
@@ -259,7 +277,8 @@ export const leaveRoomAtom = atom(
       set(connectionStateAtom, 'disconnected')
       
     } catch (error) {
-      console.error('Failed to leave room:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      set(errorAtom, errorMessage)
     }
   }
 )
@@ -287,8 +306,9 @@ export const startGameAtom = atom(
       return { success: true }
       
     } catch (error) {
-      console.error('Failed to start game:', error)
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      set(errorAtom, errorMessage)
+      return { success: false, error: errorMessage }
     }
   }
 )
