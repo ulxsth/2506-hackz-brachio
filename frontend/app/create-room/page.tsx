@@ -7,7 +7,6 @@ import { createRoomAtom, connectionStateAtom } from '@/lib/supabase-atoms';
 
 export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState('');
-  const [hostName, setHostName] = useState('');
   const [timeLimit, setTimeLimit] = useState(5);
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [category, setCategory] = useState('all');
@@ -21,11 +20,6 @@ export default function CreateRoomPage() {
     
     if (!roomCode.trim()) {
       alert('あいことばを入力してください');
-      return;
-    }
-
-    if (!hostName.trim()) {
-      alert('ニックネームを入力してください');
       return;
     }
 
@@ -44,7 +38,6 @@ export default function CreateRoomPage() {
     try {
       const result = await createRoom({
         roomId: roomCode,
-        hostName: hostName,
         settings: {
           timeLimit,
           maxPlayers,
@@ -81,22 +74,6 @@ export default function CreateRoomPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="hostName" className="block text-sm font-medium text-gray-700 mb-2">
-              ニックネーム <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="hostName"
-              value={hostName}
-              onChange={(e) => setHostName(e.target.value)}
-              placeholder="あなたのニックネーム"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-              maxLength={15}
-              required
-            />
-          </div>
-
           <div>
             <label htmlFor="roomCode" className="block text-sm font-medium text-gray-700 mb-2">
               あいことば <span className="text-red-500">*</span>

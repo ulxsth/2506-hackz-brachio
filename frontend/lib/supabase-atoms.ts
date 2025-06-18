@@ -1,5 +1,5 @@
 import { atom } from 'jotai'
-import { supabase, type Room, type Player, type RealtimeRoom } from './supabase'
+import { supabase, type Room, type RoomPlayer, type RealtimeRoom } from './supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 // 接続状態
@@ -12,7 +12,7 @@ export const userAtom = atom<{ id: string; name: string } | null>(null)
 export const currentRoomAtom = atom<RealtimeRoom | null>(null)
 
 // ルーム内のプレイヤーリスト
-export const playersAtom = atom<Player[]>([])
+export const playersAtom = atom<RoomPlayer[]>([])
 
 // Realtimeチャンネル
 export const realtimeChannelAtom = atom<RealtimeChannel | null>(null)
@@ -20,16 +20,15 @@ export const realtimeChannelAtom = atom<RealtimeChannel | null>(null)
 // ルーム作成
 export const createRoomAtom = atom(
   null,
-  async (get, set, { roomId, hostName, settings }: { 
+  async (get, set, { roomId, settings }: { 
     roomId: string
-    hostName: string 
     settings: Room['settings']
   }) => {
     try {
       set(connectionStateAtom, 'connecting')
       
       // ユーザー作成
-      const user = { id: crypto.randomUUID(), name: hostName }
+      const user = { id: crypto.randomUUID(), name: 'Host' }
       set(userAtom, user)
       
       // ルーム作成
@@ -48,11 +47,11 @@ export const createRoomAtom = atom(
       
       // プレイヤー作成（ホスト）
       const { data: playerData, error: playerError } = await supabase
-        .from('players')
+        .from('room_players')
         .insert({
           id: user.id,
           room_id: roomId,
-          name: hostName,
+          name: user.name,
           score: 0,
           combo: 0,
           is_host: true
@@ -75,7 +74,7 @@ export const createRoomAtom = atom(
         }, 
         (payload) => {
           console.log('New player joined:', payload.new)
-          set(playersAtom, (prev) => [...prev, payload.new as Player])
+          set(playersAtom, (prev) => [...prev, payload.new as RoomPlayer])
         }
       )
       
@@ -135,7 +134,7 @@ export const joinRoomAtom = atom(
       // ルーム存在確認
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
-        .select('*, players:players(*)')
+        .select('*, players:room_players(*)')
         .eq('id', roomId)
         .eq('status', 'waiting')
         .single()
@@ -145,7 +144,8 @@ export const joinRoomAtom = atom(
       }
       
       // 参加人数チェック
-      if (roomData.players.length >= roomData.settings.maxPlayers) {
+      const settings = roomData.settings as { maxPlayers: number; timeLimit: number; category: string }
+      if (roomData.players && roomData.players.length >= settings.maxPlayers) {
         throw new Error('Room is full')
       }
       
@@ -155,7 +155,7 @@ export const joinRoomAtom = atom(
       
       // プレイヤー追加
       const { data: playerData, error: playerError } = await supabase
-        .from('players')
+        .from('room_players')
         .insert({
           id: user.id,
           room_id: roomId,
@@ -182,7 +182,7 @@ export const joinRoomAtom = atom(
         }, 
         (payload) => {
           console.log('New player joined:', payload.new)
-          set(playersAtom, (prev) => [...prev, payload.new as Player])
+          set(playersAtom, (prev) => [...prev, payload.new as RoomPlayer])
         }
       )
       
@@ -216,8 +216,10 @@ export const joinRoomAtom = atom(
       set(realtimeChannelAtom, channel)
       
       // 状態設定
-      set(currentRoomAtom, { ...roomData, players: [...roomData.players, playerData] })
-      set(playersAtom, [...roomData.players, playerData])
+      const typedPlayerData = playerData as RoomPlayer
+      const typedPlayers = roomData.players as RoomPlayer[]
+      set(currentRoomAtom, { ...roomData, players: [...typedPlayers, typedPlayerData] })
+      set(playersAtom, [...typedPlayers, typedPlayerData])
       set(connectionStateAtom, 'connected')
       
       return { success: true, room: roomData }
@@ -241,7 +243,7 @@ export const leaveRoomAtom = atom(
       if (user) {
         // プレイヤー削除
         await supabase
-          .from('players')
+          .from('room_players')
           .delete()
           .eq('id', user.id)
       }
