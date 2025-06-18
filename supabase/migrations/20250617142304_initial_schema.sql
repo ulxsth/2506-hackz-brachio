@@ -131,12 +131,3 @@ alter publication supabase_realtime add table public.rooms;
 alter publication supabase_realtime add table public.players;
 alter publication supabase_realtime add table public.game_sessions;
 alter publication supabase_realtime add table public.word_submissions;
-
--- サンプルIT用語データ
-insert into public.it_terms (term, category, difficulty, description) values
-('TypeScript', 'programming', 3, 'JavaScriptに型安全性を追加した言語'),
-('React', 'web', 4, 'Facebookが開発したJavaScriptライブラリ'),
-('PostgreSQL', 'database', 6, 'オープンソースのリレーショナルデータベース'),
-('Docker', 'infrastructure', 7, 'コンテナ仮想化プラットフォーム'),
-('OAuth', 'security', 8, '認証・認可のオープン標準'),
-('TensorFlow', 'ai', 9, 'Googleが開発した機械学習ライブラリ');
