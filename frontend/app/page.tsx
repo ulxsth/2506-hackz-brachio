@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/supabase-atoms';
+import { debugLog } from '@/lib/logger';
 
 export default function Home() {
   const [nickname, setNickname] = useState('');
@@ -13,7 +14,7 @@ export default function Home() {
 
   // 初期状態を確認
   useEffect(() => {
-    console.log('HomePage - user:', user);
+    debugLog('HomePage - user:', user);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -36,7 +37,7 @@ export default function Home() {
 
     // userAtomにニックネームを設定
     const userData = { id: crypto.randomUUID(), name: nickname };
-    console.log('Setting user:', userData);
+    debugLog('Setting user:', userData);
     setUser(userData);
     
     router.push('/menu');

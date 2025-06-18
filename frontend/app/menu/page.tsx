@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/supabase-atoms';
+import { debugLog } from '@/lib/logger';
 
 export default function MenuPage() {
   const [user, setUser] = useAtom(userAtom);
@@ -23,16 +24,14 @@ export default function MenuPage() {
   useEffect(() => {
     // ローディング中は何もしない
     if (isLoading) return;
-    
-    console.log('MenuPage - user:', user);
-    
+
+    debugLog('MenuPage - user:', user);
+
     if (!user?.name) {
-      console.log('No user, redirecting to /');
+      debugLog('No user, redirecting to /');
       router.push('/');
       return;
     }
-    
-    console.log('User found, staying on menu');
   }, [user, router, isLoading]);
 
   const handleCreateRoom = () => {

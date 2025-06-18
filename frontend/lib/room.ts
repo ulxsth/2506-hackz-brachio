@@ -1,12 +1,6 @@
+import { debugLog } from './logger'
 import { supabase, type Room, type RoomPlayer } from './supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-
-// デバッグログ用のヘルパー関数
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(message, data)
-  }
-}
 
 // ルーム作成
 export const createRoom = async (params: {
