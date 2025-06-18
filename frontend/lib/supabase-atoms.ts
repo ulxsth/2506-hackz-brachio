@@ -89,11 +89,18 @@ export const createRoomAtom = atom(
         { 
           event: 'INSERT', 
           schema: 'public', 
-          table: 'players',
+          table: 'room_players',
           filter: `room_id=eq.${roomId}`
         }, 
         (payload) => {
-          set(playersAtom, (prev) => [...prev, payload.new as RoomPlayer])
+          const newPlayer = payload.new as RoomPlayer
+          set(playersAtom, (prev) => {
+            // 重複チェック：既に同じIDのプレイヤーがいる場合は追加しない
+            if (prev.some(p => p.id === newPlayer.id)) {
+              return prev
+            }
+            return [...prev, newPlayer]
+          })
         }
       )
       
@@ -102,7 +109,7 @@ export const createRoomAtom = atom(
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'players',
+          table: 'room_players',
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
@@ -205,11 +212,18 @@ export const joinRoomAtom = atom(
         { 
           event: 'INSERT', 
           schema: 'public', 
-          table: 'players',
+          table: 'room_players',
           filter: `room_id=eq.${roomId}`
         }, 
         (payload) => {
-          set(playersAtom, (prev) => [...prev, payload.new as RoomPlayer])
+          const newPlayer = payload.new as RoomPlayer
+          set(playersAtom, (prev) => {
+            // 重複チェック：既に同じIDのプレイヤーがいる場合は追加しない
+            if (prev.some(p => p.id === newPlayer.id)) {
+              return prev
+            }
+            return [...prev, newPlayer]
+          })
         }
       )
       
@@ -217,7 +231,7 @@ export const joinRoomAtom = atom(
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'players',
+          table: 'room_players',
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
@@ -243,8 +257,15 @@ export const joinRoomAtom = atom(
       // 状態設定
       const typedPlayerData = playerData as RoomPlayer
       const typedPlayers = roomData.players as RoomPlayer[]
-      set(currentRoomAtom, { ...roomData, players: [...typedPlayers, typedPlayerData] })
-      set(playersAtom, [...typedPlayers, typedPlayerData])
+      
+      // 重複を避けて新しいプレイヤーを追加
+      const uniquePlayers = [...typedPlayers]
+      if (!uniquePlayers.some(p => p.id === typedPlayerData.id)) {
+        uniquePlayers.push(typedPlayerData)
+      }
+      
+      set(currentRoomAtom, { ...roomData, players: uniquePlayers })
+      set(playersAtom, uniquePlayers)
       set(connectionStateAtom, 'connected')
       
       return { success: true, room: roomData }
