@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
-          variables?: Json
-          operationName?: string
-          query?: string
           extensions?: Json
+          variables?: Json
+          query?: string
+          operationName?: string
         }
         Returns: Json
       }
@@ -162,6 +162,60 @@ export type Database = {
           },
         ]
       }
+      player_ready_states: {
+        Row: {
+          assets_loaded: boolean
+          created_at: string
+          last_heartbeat: string | null
+          latency_ms: number | null
+          network_ready: boolean
+          player_id: string
+          ready_at: string | null
+          room_id: string
+          ui_ready: boolean
+          updated_at: string
+        }
+        Insert: {
+          assets_loaded?: boolean
+          created_at?: string
+          last_heartbeat?: string | null
+          latency_ms?: number | null
+          network_ready?: boolean
+          player_id: string
+          ready_at?: string | null
+          room_id: string
+          ui_ready?: boolean
+          updated_at?: string
+        }
+        Update: {
+          assets_loaded?: boolean
+          created_at?: string
+          last_heartbeat?: string | null
+          latency_ms?: number | null
+          network_ready?: boolean
+          player_id?: string
+          ready_at?: string | null
+          room_id?: string
+          ui_ready?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_ready_states_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "room_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_ready_states_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_players: {
         Row: {
           combo: number
@@ -203,6 +257,7 @@ export type Database = {
       rooms: {
         Row: {
           created_at: string
+          game_state: Json | null
           host_id: string
           id: string
           settings: Json
@@ -210,6 +265,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          game_state?: Json | null
           host_id: string
           id: string
           settings?: Json
@@ -217,6 +273,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          game_state?: Json | null
           host_id?: string
           id?: string
           settings?: Json
@@ -280,6 +337,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_server_time: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       gtrgm_compress: {
         Args: { "": unknown }
         Returns: unknown
@@ -311,6 +372,33 @@ export type Database = {
       show_trgm: {
         Args: { "": string }
         Returns: string[]
+      }
+      start_game_countdown: {
+        Args: { p_room_id: string }
+        Returns: Json
+      }
+      start_game_preparation: {
+        Args: {
+          p_room_id: string
+          p_preparation_timeout?: number
+          p_countdown_duration?: number
+        }
+        Returns: Json
+      }
+      start_game_session: {
+        Args: { p_room_id: string }
+        Returns: Json
+      }
+      update_player_ready_state: {
+        Args: {
+          p_player_id: string
+          p_room_id: string
+          p_assets_loaded?: boolean
+          p_network_ready?: boolean
+          p_ui_ready?: boolean
+          p_latency_ms?: number
+        }
+        Returns: Json
       }
     }
     Enums: {
