@@ -2,25 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAtom } from 'jotai';
-import { 
-  currentRoomAtom, 
-  playersAtom, 
-  userAtom, 
-  connectionStateAtom,
-  startGameAtom,
-  leaveRoomAtom,
-  errorAtom
-} from '@/lib/supabase-atoms';
+import { useRoom } from '@/hooks/useRoom';
 
 export default function RoomPage() {
-  const [currentRoom] = useAtom(currentRoomAtom);
-  const [players] = useAtom(playersAtom);
-  const [user] = useAtom(userAtom);
-  const [connectionState] = useAtom(connectionStateAtom);
-  const [, startGame] = useAtom(startGameAtom);
-  const [, leaveRoom] = useAtom(leaveRoomAtom);
-  const [globalError] = useAtom(errorAtom);
+  const {
+    currentRoom,
+    players,
+    user,
+    connectionState,
+    error: globalError,
+    startGame,
+    leaveRoom,
+    clearError
+  } = useRoom();
   const [error, setError] = useState('');
   const router = useRouter();
 

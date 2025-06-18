@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAtom } from 'jotai';
-import { joinRoomAtom, connectionStateAtom, errorAtom, userAtom } from '@/lib/supabase-atoms';
+import { useRoom } from '@/hooks/useRoom';
 
 export default function JoinRoomPage() {
   const [roomCode, setRoomCode] = useState('');
-  const [user] = useAtom(userAtom);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [, joinRoom] = useAtom(joinRoomAtom);
-  const [connectionState] = useAtom(connectionStateAtom);
-  const [globalError] = useAtom(errorAtom);
+  const {
+    user,
+    joinRoom,
+    connectionState,
+    error: globalError
+  } = useRoom();
   const router = useRouter();
 
   useEffect(() => {

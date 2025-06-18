@@ -1,0 +1,208 @@
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import {
+  connectionStateAtom,
+  userAtom,
+  currentRoomAtom,
+  playersAtom,
+  realtimeChannelAtom,
+  errorAtom
+} from '../lib/supabase-atoms'
+import {
+  createRoom,
+  joinRoom,
+  leaveRoom,
+  startGame,
+  setupRealtimeChannel,
+  subscribeChannel
+} from '../lib/room'
+import type { Room, RoomPlayer } from '../lib/supabase'
+
+export const useRoom = () => {
+  const [connectionState, setConnectionState] = useAtom(connectionStateAtom)
+  const [user, setUser] = useAtom(userAtom)
+  const [currentRoom, setCurrentRoom] = useAtom(currentRoomAtom)
+  const [players, setPlayers] = useAtom(playersAtom)
+  const [realtimeChannel, setRealtimeChannel] = useAtom(realtimeChannelAtom)
+  const [error, setError] = useAtom(errorAtom)
+
+  // ルーム作成処理
+  const handleCreateRoom = async (params: {
+    roomId: string
+    settings: Room['settings']
+  }) => {
+    if (!user) {
+      setError('ユーザー情報が見つかりません')
+      return { success: false, error: 'ユーザー情報が見つかりません' }
+    }
+
+    setConnectionState('connecting')
+    setError(null)
+
+    const result = await createRoom({
+      roomId: params.roomId,
+      settings: params.settings,
+      currentUser: user
+    })
+
+    if (result.success && result.room && result.player) {
+      // Realtimeチャンネル設定
+      const channel = setupRealtimeChannel({
+        roomId: params.roomId,
+        onPlayerJoin: (player: RoomPlayer) => {
+          setPlayers(prev => {
+            if (prev.some(p => p.id === player.id)) {
+              return prev
+            }
+            return [...prev, player]
+          })
+        },
+        onPlayerLeave: (playerId: string) => {
+          setPlayers(prev => prev.filter(p => p.id !== playerId))
+        },
+        onRoomUpdate: (roomData: any) => {
+          setCurrentRoom(prev => prev ? { ...prev, ...roomData } : null)
+        }
+      })
+
+      await subscribeChannel(channel)
+      setRealtimeChannel(channel)
+
+      // 初期状態設定
+      setCurrentRoom({ ...result.room, players: [result.player] })
+      setPlayers([result.player])
+      setConnectionState('connected')
+    } else {
+      setError(result.error || '不明なエラーが発生しました')
+      setConnectionState('disconnected')
+    }
+
+    return result
+  }
+
+  // ルーム参加処理
+  const handleJoinRoom = async (params: {
+    roomId: string
+    playerName: string
+  }) => {
+    if (!user) {
+      setError('ユーザー情報が見つかりません')
+      return { success: false, error: 'ユーザー情報が見つかりません' }
+    }
+
+    setConnectionState('connecting')
+    setError(null)
+
+    // プレイヤー名でユーザー情報を更新
+    const updatedUser = { ...user, name: params.playerName }
+    setUser(updatedUser)
+
+    const result = await joinRoom({
+      roomId: params.roomId,
+      playerName: params.playerName,
+      currentUser: user
+    })
+
+    if (result.success && result.room && result.player) {
+      // Realtimeチャンネル設定
+      const channel = setupRealtimeChannel({
+        roomId: params.roomId,
+        onPlayerJoin: (player: RoomPlayer) => {
+          setPlayers(prev => {
+            if (prev.some(p => p.id === player.id)) {
+              return prev
+            }
+            return [...prev, player]
+          })
+        },
+        onPlayerLeave: (playerId: string) => {
+          setPlayers(prev => prev.filter(p => p.id !== playerId))
+        },
+        onRoomUpdate: (roomData: any) => {
+          setCurrentRoom(prev => prev ? { ...prev, ...roomData } : null)
+        }
+      })
+
+      await subscribeChannel(channel)
+      setRealtimeChannel(channel)
+
+      // 状態設定
+      const typedPlayers = result.room.players as RoomPlayer[]
+      const uniquePlayers = [...typedPlayers]
+      if (!uniquePlayers.some(p => p.id === result.player.id)) {
+        uniquePlayers.push(result.player)
+      }
+
+      setCurrentRoom({ ...result.room, players: uniquePlayers })
+      setPlayers(uniquePlayers)
+      setConnectionState('connected')
+    } else {
+      setError(result.error || '不明なエラーが発生しました')
+      setConnectionState('disconnected')
+    }
+
+    return result
+  }
+
+  // ルーム退出処理
+  const handleLeaveRoom = async () => {
+    if (!user) return { success: false, error: 'ユーザー情報が見つかりません' }
+
+    const result = await leaveRoom({
+      userId: user.id,
+      channel: realtimeChannel
+    })
+
+    // 状態リセット
+    setCurrentRoom(null)
+    setPlayers([])
+    setRealtimeChannel(null)
+    setConnectionState('disconnected')
+
+    if (!result.success) {
+      setError(result.error || '不明なエラーが発生しました')
+    }
+
+    return result
+  }
+
+  // ゲーム開始処理
+  const handleStartGame = async () => {
+    if (!user || !currentRoom) {
+      const errorMsg = 'ユーザー情報またはルーム情報が見つかりません'
+      setError(errorMsg)
+      return { success: false, error: errorMsg }
+    }
+
+    const result = await startGame({
+      userId: user.id,
+      roomId: currentRoom.id,
+      hostId: currentRoom.host_id
+    })
+
+    if (!result.success) {
+      setError(result.error || '不明なエラーが発生しました')
+    }
+
+    return result
+  }
+
+  // エラークリア
+  const clearError = () => {
+    setError(null)
+  }
+
+  return {
+    // 状態
+    connectionState,
+    user,
+    currentRoom,
+    players,
+    error,
+    // アクション
+    createRoom: handleCreateRoom,
+    joinRoom: handleJoinRoom,
+    leaveRoom: handleLeaveRoom,
+    startGame: handleStartGame,
+    clearError
+  }
+}

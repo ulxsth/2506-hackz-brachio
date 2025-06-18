@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAtom } from 'jotai';
-import { createRoomAtom, connectionStateAtom, errorAtom, clearErrorAtom } from '@/lib/supabase-atoms';
+import { useRoom } from '@/hooks/useRoom';
 
 export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -12,16 +11,18 @@ export default function CreateRoomPage() {
   const [category, setCategory] = useState('all');
   const [error, setError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [, createRoom] = useAtom(createRoomAtom);
-  const [connectionState] = useAtom(connectionStateAtom);
-  const [globalError, setGlobalError] = useAtom(errorAtom);
-  const [, clearError] = useAtom(clearErrorAtom);
+  const {
+    createRoom,
+    connectionState,
+    error: globalError,
+    clearError
+  } = useRoom();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    clearError(); // 【🤔】グローバルエラーもクリア
+    clearError(); // グローバルエラーもクリア
     
     if (!roomCode.trim()) {
       setError('あいことばを入力してください');
