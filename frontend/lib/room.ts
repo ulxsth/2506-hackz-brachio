@@ -164,17 +164,17 @@ export const leaveRoom = async (params: {
     if (userId) {
       debugLog('🗑️ leaveRoom: プレイヤー削除開始', userId)
       // プレイヤー削除
-      await supabase
+      const { data, error } = await supabase
         .from('room_players')
         .delete()
         .eq('id', userId)
-      debugLog('✅ leaveRoom: プレイヤー削除完了')
-    }
-    
-    if (channel) {
-      debugLog('🔌 leaveRoom: チャンネル購読解除開始')
-      await channel.unsubscribe()
-      debugLog('✅ leaveRoom: チャンネル購読解除完了')
+        .select()
+      
+      if (error) {
+        debugLog('❌ leaveRoom: プレイヤー削除エラー', error)
+        throw error
+      }
+      debugLog('✅ leaveRoom: プレイヤー削除完了', { deletedData: data })
     }
     
     debugLog('🎉 leaveRoom: ルーム退出完了')
