@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/supabase-atoms';
@@ -10,6 +10,11 @@ export default function Home() {
   const [user, setUser] = useAtom(userAtom);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  // 初期状態を確認
+  useEffect(() => {
+    console.log('HomePage - user:', user);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +35,10 @@ export default function Home() {
     }
 
     // userAtomにニックネームを設定
-    setUser({ id: crypto.randomUUID(), name: nickname });
+    const userData = { id: crypto.randomUUID(), name: nickname };
+    console.log('Setting user:', userData);
+    setUser(userData);
+    
     router.push('/menu');
   };
 

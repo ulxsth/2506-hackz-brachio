@@ -1,21 +1,39 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/supabase-atoms';
 
 export default function MenuPage() {
   const [user, setUser] = useAtom(userAtom);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // ユーザー情報の確認
+    // atomWithStorage の復元を待つ
+    // FIXME: 絶対ほかに方法あると思うよ
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 100); // 短時間待って復元完了を確認
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // ローディング中は何もしない
+    if (isLoading) return;
+    
+    console.log('MenuPage - user:', user);
+    
     if (!user?.name) {
+      console.log('No user, redirecting to /');
       router.push('/');
       return;
     }
-  }, [user, router]);
+    
+    console.log('User found, staying on menu');
+  }, [user, router, isLoading]);
 
   const handleCreateRoom = () => {
     router.push('/create-room');
@@ -29,6 +47,15 @@ export default function MenuPage() {
     setUser(null);
     router.push('/');
   };
+
+  // ローディング中の表示
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   if (!user?.name) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>;

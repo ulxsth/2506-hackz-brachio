@@ -1,4 +1,5 @@
 import { atom } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
 import { type RoomPlayer, type RealtimeRoom } from './supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
@@ -6,7 +7,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 export const connectionStateAtom = atom<'disconnected' | 'connecting' | 'connected'>('disconnected')
 
 // ユーザー情報（id + name/ニックネーム）
-export const userAtom = atom<{ id: string; name: string } | null>(null)
+export const userAtom = atomWithStorage<{ id: string; name: string } | null>('user', null)
 
 // 現在のルーム情報
 export const currentRoomAtom = atom<RealtimeRoom | null>(null)
