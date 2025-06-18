@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAtom } from 'jotai';
+import { userAtom } from '@/lib/supabase-atoms';
 
 export default function MenuPage() {
-  const [nickname, setNickname] = useState('');
+  const [user, setUser] = useAtom(userAtom);
   const router = useRouter();
 
   useEffect(() => {
-    // ニックネームの取得
-    const storedNickname = localStorage.getItem('nickname');
-    if (!storedNickname) {
+    // ユーザー情報の確認
+    if (!user?.name) {
       router.push('/');
       return;
     }
-    setNickname(storedNickname);
-  }, [router]);
+  }, [user, router]);
 
   const handleCreateRoom = () => {
     router.push('/create-room');
@@ -26,11 +26,11 @@ export default function MenuPage() {
   };
 
   const handleChangeNickname = () => {
-    localStorage.removeItem('nickname');
+    setUser(null);
     router.push('/');
   };
 
-  if (!nickname) {
+  if (!user?.name) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>;
   }
 
@@ -42,7 +42,7 @@ export default function MenuPage() {
             <span className="text-2xl">👋</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            こんにちは、{nickname}さん！
+            こんにちは、{user.name}さん！
           </h1>
           <p className="text-gray-600">何をしますか？</p>
         </div>

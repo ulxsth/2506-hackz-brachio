@@ -5,7 +5,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 // 接続状態
 export const connectionStateAtom = atom<'disconnected' | 'connecting' | 'connected'>('disconnected')
 
-// ユーザー情報
+// ユーザー情報（id + name/ニックネーム）
 export const userAtom = atom<{ id: string; name: string } | null>(null)
 
 // 現在のルーム情報
@@ -39,16 +39,18 @@ export const createRoomAtom = atom(
       set(connectionStateAtom, 'connecting')
       set(errorAtom, null) // エラークリア
       
-      // ユーザー作成
-      const user = { id: crypto.randomUUID(), name: 'Host' }
-      set(userAtom, user)
+      // 既存のユーザー情報を取得
+      const currentUser = get(userAtom)
+      if (!currentUser?.name) {
+        throw new Error('ユーザー情報が見つかりません')
+      }
       
       // ルーム作成
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
         .insert({
           id: roomId,
-          host_id: user.id,
+          host_id: currentUser.id,
           settings,
           status: 'waiting'
         })
@@ -67,9 +69,9 @@ export const createRoomAtom = atom(
       const { data: playerData, error: playerError } = await supabase
         .from('room_players')
         .insert({
-          id: user.id,
+          id: currentUser.id,
           room_id: roomId,
-          name: user.name,
+          name: currentUser.name,
           score: 0,
           combo: 0,
           is_host: true
@@ -148,6 +150,16 @@ export const joinRoomAtom = atom(
       set(connectionStateAtom, 'connecting')
       set(errorAtom, null) // エラークリア
       
+      // 既存のユーザー情報を取得（ただし名前は参加時の名前を使用）
+      const currentUser = get(userAtom)
+      if (!currentUser) {
+        throw new Error('ユーザー情報が見つかりません')
+      }
+      
+      // プレイヤー名でユーザー情報を更新
+      const updatedUser = { ...currentUser, name: playerName }
+      set(userAtom, updatedUser)
+      
       // ルーム存在確認
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
@@ -169,15 +181,11 @@ export const joinRoomAtom = atom(
         throw new Error('ルームの定員に達しています。別のルームに参加してください。')
       }
       
-      // ユーザー作成
-      const user = { id: crypto.randomUUID(), name: playerName }
-      set(userAtom, user)
-      
       // プレイヤー追加
       const { data: playerData, error: playerError } = await supabase
         .from('room_players')
         .insert({
-          id: user.id,
+          id: updatedUser.id,
           room_id: roomId,
           name: playerName,
           score: 0,

@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAtom } from 'jotai';
+import { userAtom } from '@/lib/supabase-atoms';
 
 export default function Home() {
   const [nickname, setNickname] = useState('');
+  const [user, setUser] = useAtom(userAtom);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -26,8 +29,8 @@ export default function Home() {
       return;
     }
 
-    // ローカルストレージに保存（実際の実装では状態管理ライブラリを使用）
-    localStorage.setItem('nickname', nickname);
+    // userAtomにニックネームを設定
+    setUser({ id: crypto.randomUUID(), name: nickname });
     router.push('/menu');
   };
 
