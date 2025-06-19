@@ -12,6 +12,7 @@ import {
   joinRoom,
   leaveRoom,
   startGame,
+  forceEndGame,
   setupRealtimeChannel,
   subscribeChannel
 } from '../lib/room'
@@ -200,6 +201,27 @@ export const useRoom = () => {
     return result
   }
 
+  // ゲーム強制終了処理（ホスト専用）
+  const handleForceEndGame = async () => {
+    if (!user || !currentRoom) {
+      const errorMsg = 'ユーザー情報またはルーム情報が見つかりません'
+      setError(errorMsg)
+      return { success: false, error: errorMsg }
+    }
+
+    const result = await forceEndGame({
+      userId: user.id,
+      roomId: currentRoom.id,
+      hostId: currentRoom.host_id
+    })
+
+    if (!result.success) {
+      setError(result.error || '不明なエラーが発生しました')
+    }
+
+    return result
+  }
+
   // エラークリア
   const clearError = () => {
     setError(null)
@@ -217,6 +239,7 @@ export const useRoom = () => {
     joinRoom: handleJoinRoom,
     leaveRoom: handleLeaveRoom,
     startGame: handleStartGame,
+    forceEndGame: handleForceEndGame,
     clearError
   }
 }

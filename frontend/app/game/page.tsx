@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useRoom } from '@/hooks/useRoom';
 import type { Database } from '@/lib/database.types';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
@@ -21,6 +22,9 @@ interface Constraint {
 }
 
 export default function GamePage() {
+  const router = useRouter();
+  const { user, currentRoom, forceEndGame } = useRoom();
+  
   const [timeLeft, setTimeLeft] = useState(300); // 5分 = 300秒
   const [currentInput, setCurrentInput] = useState('');
   const [myScore, setMyScore] = useState(0);
@@ -45,7 +49,6 @@ export default function GamePage() {
   const [words, setWords] = useState<string[]>([]);
   const [itTerms, setItTerms] = useState<ITTerm[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
 
   // 制約生成機能
   const generateRandomConstraint = (): Constraint => {
@@ -240,6 +243,47 @@ export default function GamePage() {
     }
   };
 
+  // ホスト専用強制終了機能
+  const handleForceQuitGame = async () => {
+    if (!user || !currentRoom) {
+      alert('ユーザー情報またはルーム情報が取得できません');
+      return;
+    }
+
+    // ホスト権限チェック
+    if (currentRoom.host_id !== user.id) {
+      alert('ゲーム終了はホストのみ実行できます');
+      return;
+    }
+
+    if (confirm('ゲームを強制終了しますか？\n全プレイヤーが結果画面に移動します。')) {
+      try {
+        const result = await forceEndGame();
+        
+        if (result.success) {
+          // 結果画面に遷移
+          router.push('/result');
+        } else {
+          alert(`ゲーム終了に失敗しました: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('ゲーム強制終了エラー:', error);
+        alert('ゲーム終了に失敗しました');
+      }
+    }
+  };
+
+  // ホスト判定
+  const isHost = user && currentRoom && currentRoom.host_id === user.id;
+
+  // ルーム状態の監視（強制終了検知）
+  useEffect(() => {
+    if (currentRoom?.status === 'finished') {
+      // ゲームが強制終了された場合は結果画面に遷移
+      router.push('/result');
+    }
+  }, [currentRoom?.status, router]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -265,12 +309,16 @@ export default function GamePage() {
               <div className="text-sm text-gray-600">現在の順位</div>
             </div>
           </div>
-          <button
-            onClick={handleQuitGame}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
-          >
-            [DEBUG] ゲーム終了
-          </button>
+          {/* ホスト専用ゲーム終了ボタン */}
+          {isHost && (
+            <button
+              onClick={handleForceQuitGame}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+              title="ホスト専用: 全プレイヤーのゲームを強制終了します"
+            >
+              👑 ゲーム終了
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

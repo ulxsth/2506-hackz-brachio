@@ -237,6 +237,48 @@ export const startGame = async (params: {
   }
 }
 
+// ゲーム強制終了（ホスト専用）
+export const forceEndGame = async (params: {
+  userId: string
+  roomId: string
+  hostId: string
+}) => {
+  const { userId, roomId, hostId } = params
+  
+  try {
+    debugLog('🚀 forceEndGame: ゲーム強制終了処理開始')
+    debugLog('👤 forceEndGame: ユーザーID', userId)
+    debugLog('🏠 forceEndGame: ルームID', roomId)
+    debugLog('👑 forceEndGame: ホストID', hostId)
+    
+    if (userId !== hostId) {
+      debugLog('❌ forceEndGame: 権限エラー', { userId, hostId })
+      throw new Error('Only host can force end the game')
+    }
+    
+    // ルーム状態を終了に変更
+    debugLog('🔄 forceEndGame: ルーム状態をfinishedに変更開始', roomId)
+    const { error } = await supabase
+      .from('rooms')
+      .update({ status: 'finished' })
+      .eq('id', roomId)
+    
+    if (error) {
+      debugLog('❌ forceEndGame: ルーム状態変更エラー', error)
+      throw error
+    }
+    
+    debugLog('✅ forceEndGame: ルーム状態変更成功')
+    debugLog('🎉 forceEndGame: ゲーム強制終了完了')
+    return { success: true }
+    
+  } catch (error) {
+    debugLog('💥 forceEndGame: エラー発生', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: errorMessage }
+  }
+}
+
 // Realtimeチャンネルの設定
 export const setupRealtimeChannel = (params: {
   roomId: string
