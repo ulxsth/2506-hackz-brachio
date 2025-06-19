@@ -38,10 +38,17 @@ export const useRoom = () => {
     setConnectionState('connecting')
     setError(null)
 
+    // 毎回新しいユーザーIDを生成してプレイヤー作成の重複を防ぐ
+    const freshUser = {
+      ...user,
+      id: crypto.randomUUID()
+    }
+    setUser(freshUser)
+
     const result = await createRoom({
       roomId: params.roomId,
       settings: params.settings,
-      currentUser: user
+      currentUser: freshUser
     })
 
     if (result.success && result.room && result.player) {
@@ -74,6 +81,10 @@ export const useRoom = () => {
     } else {
       setError(result.error || '不明なエラーが発生しました')
       setConnectionState('disconnected')
+      // エラー時は状態をクリーンアップ
+      setCurrentRoom(null)
+      setPlayers([])
+      setRealtimeChannel(null)
     }
 
     return result
@@ -92,14 +103,17 @@ export const useRoom = () => {
     setConnectionState('connecting')
     setError(null)
 
-    // プレイヤー名でユーザー情報を更新
-    const updatedUser = { ...user, name: params.playerName }
-    setUser(updatedUser)
+    // 毎回新しいユーザーIDを生成してプレイヤー作成の重複を防ぐ
+    const freshUser = {
+      id: crypto.randomUUID(),
+      name: params.playerName
+    }
+    setUser(freshUser)
 
     const result = await joinRoom({
       roomId: params.roomId,
       playerName: params.playerName,
-      currentUser: user
+      currentUser: freshUser
     })
 
     if (result.success && result.room && result.player) {
@@ -138,6 +152,10 @@ export const useRoom = () => {
     } else {
       setError(result.error || '不明なエラーが発生しました')
       setConnectionState('disconnected')
+      // エラー時は状態をクリーンアップ
+      setCurrentRoom(null)
+      setPlayers([])
+      setRealtimeChannel(null)
     }
 
     return result

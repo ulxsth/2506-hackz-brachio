@@ -56,7 +56,14 @@ export const createRoom = async (params: {
       .select()
       .single()
     
-    if (playerError) throw playerError
+    if (playerError) {
+      debugLog('❌ createRoom: プレイヤー作成エラー', playerError)
+      // プレイヤーID重複エラーをチェック
+      if (playerError.code === '23505' && playerError.message.includes('players_pkey')) {
+        throw new Error('プレイヤー作成に失敗しました。もう一度お試しください。')
+      }
+      throw playerError
+    }
     
     debugLog('✅ createRoom: ホストプレイヤー作成成功', playerData)
     debugLog('🎉 createRoom: ルーム作成完了')
@@ -129,7 +136,14 @@ export const joinRoom = async (params: {
       .select()
       .single()
     
-    if (playerError) throw playerError
+    if (playerError) {
+      debugLog('❌ joinRoom: プレイヤー追加エラー', playerError)
+      // プレイヤーID重複エラーをチェック
+      if (playerError.code === '23505' && playerError.message.includes('players_pkey')) {
+        throw new Error('参加に失敗しました。もう一度お試しください。')
+      }
+      throw playerError
+    }
     
     debugLog('✅ joinRoom: プレイヤー追加成功', playerData)
     debugLog('🎉 joinRoom: ルーム参加完了')
