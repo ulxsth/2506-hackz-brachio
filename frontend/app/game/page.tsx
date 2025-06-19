@@ -112,7 +112,8 @@ export default function GamePage() {
       setTimeLeft(prev => {
         if (prev <= 1) {
           // ゲーム終了
-          router.push('/result');
+          const roomId = currentRoom?.id || 'unknown';
+          router.push(`/result?roomId=${roomId}`);
           return 0;
         }
         return prev - 1;
@@ -262,7 +263,8 @@ export default function GamePage() {
         
         if (result.success) {
           // 結果画面に遷移
-          router.push('/result');
+          const roomId = currentRoom?.id || 'unknown';
+          router.push(`/result?roomId=${roomId}`);
         } else {
           alert(`ゲーム終了に失敗しました: ${result.error}`);
         }
@@ -280,9 +282,10 @@ export default function GamePage() {
   useEffect(() => {
     if (currentRoom?.status === 'finished') {
       // ゲームが強制終了された場合は結果画面に遷移
-      router.push('/result');
+      const roomId = currentRoom?.id || 'unknown';
+      router.push(`/result?roomId=${roomId}`);
     }
-  }, [currentRoom?.status, router]);
+  }, [currentRoom?.status, currentRoom?.id, router]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

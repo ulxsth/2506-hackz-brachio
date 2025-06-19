@@ -346,3 +346,141 @@ export const subscribeChannel = async (channel: RealtimeChannel) => {
   await channel.subscribe()
   debugLog('✅ subscribeChannel: チャンネル購読成功')
 }
+
+// ゲーム結果の集計
+export const getGameResults = async (roomId: string): Promise<{
+  success: boolean
+  data?: any
+  error?: string
+}> => {
+  try {
+    debugLog('📊 getGameResults: 結果集計開始', { roomId })
+    
+    if (!roomId) {
+      throw new Error('Room ID is required')
+    }
+
+    // 1. ルーム情報とゲームセッション情報を取得
+    debugLog('🏠 getGameResults: ルーム・セッション情報取得開始')
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .select(`
+        *,
+        game_sessions (
+          id,
+          start_time,
+          end_time,
+          status
+        )
+      `)
+      .eq('id', roomId)
+      .eq('status', 'finished')
+      .single()
+
+    if (roomError || !roomData) {
+      debugLog('❌ getGameResults: ルーム取得エラー', roomError)
+      throw new Error('ゲーム結果が見つかりません')
+    }
+
+    debugLog('✅ getGameResults: ルーム・セッション情報取得成功', roomData)
+
+    // 最新のゲームセッションを取得
+    const latestSession = roomData.game_sessions?.[0]
+    if (!latestSession) {
+      throw new Error('ゲームセッション情報が見つかりません')
+    }
+
+    // 2. プレイヤー別統計を取得
+    debugLog('👥 getGameResults: プレイヤー統計取得開始')
+    const { data: playersData, error: playersError } = await supabase
+      .from('room_players')
+      .select(`
+        id,
+        name,
+        score,
+        combo
+      `)
+      .eq('room_id', roomId)
+      .order('score', { ascending: false })
+
+    if (playersError) {
+      debugLog('❌ getGameResults: プレイヤー取得エラー', playersError)
+      throw playersError
+    }
+
+    debugLog('✅ getGameResults: プレイヤー統計取得成功', playersData)
+
+    // 3. 各プレイヤーの単語提出統計を取得
+    debugLog('📝 getGameResults: 単語提出統計取得開始')
+    const { data: submissionsData, error: submissionsError } = await supabase
+      .from('word_submissions')
+      .select(`
+        player_id,
+        is_valid,
+        combo_at_time
+      `)
+      .eq('game_session_id', latestSession.id)
+
+    if (submissionsError) {
+      debugLog('❌ getGameResults: 単語提出統計取得エラー', submissionsError)
+      throw submissionsError
+    }
+
+    debugLog('✅ getGameResults: 単語提出統計取得成功', submissionsData)
+
+    // 4. プレイヤー別の統計を計算
+    debugLog('🧮 getGameResults: 統計計算開始')
+    const playerResults = playersData.map((player, index) => {
+      const playerSubmissions = submissionsData.filter(s => s.player_id === player.id)
+      const totalSubmissions = playerSubmissions.length
+      const correctSubmissions = playerSubmissions.filter(s => s.is_valid).length
+      const accuracy = totalSubmissions > 0 ? Math.round((correctSubmissions / totalSubmissions) * 100 * 10) / 10 : 0
+      const maxCombo = Math.max(player.combo, ...playerSubmissions.map(s => s.combo_at_time))
+
+      return {
+        id: player.id,
+        name: player.name,
+        score: player.score,
+        rank: index + 1, // スコア順でソート済みなのでインデックス+1が順位
+        wordCount: correctSubmissions,
+        maxCombo: maxCombo,
+        accuracy: accuracy,
+        totalSubmissions: totalSubmissions,
+        correctSubmissions: correctSubmissions
+      }
+    })
+
+    debugLog('✅ getGameResults: 統計計算完了', playerResults)
+
+    // 5. ゲーム時間の計算
+    const gameDuration = latestSession.start_time && latestSession.end_time 
+      ? Math.round((new Date(latestSession.end_time).getTime() - new Date(latestSession.start_time).getTime()) / 1000)
+      : null
+
+    // 6. トップパフォーマーの特定
+    const topPerformers = {
+      highestScore: playerResults.reduce((prev, current) => prev.score > current.score ? prev : current),
+      mostWords: playerResults.reduce((prev, current) => prev.wordCount > current.wordCount ? prev : current),
+      bestCombo: playerResults.reduce((prev, current) => prev.maxCombo > current.maxCombo ? prev : current),
+      bestAccuracy: playerResults.reduce((prev, current) => prev.accuracy > current.accuracy ? prev : current)
+    }
+
+    // 7. 結果サマリーの構築
+    const resultsSummary = {
+      roomId: roomId,
+      gameSessionId: latestSession.id,
+      totalPlayers: playerResults.length,
+      gameDuration: gameDuration,
+      results: playerResults,
+      topPerformers: topPerformers
+    }
+
+    debugLog('🎉 getGameResults: 結果集計完了', resultsSummary)
+    return { success: true, data: resultsSummary }
+
+  } catch (error) {
+    debugLog('💥 getGameResults: エラー発生', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: errorMessage }
+  }
+}

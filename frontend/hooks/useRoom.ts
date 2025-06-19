@@ -13,10 +13,12 @@ import {
   leaveRoom,
   startGame,
   forceEndGame,
+  getGameResults,
   setupRealtimeChannel,
   subscribeChannel
 } from '../lib/room'
-import type { Room, RoomPlayer } from '../lib/supabase'
+import type { Room, RoomPlayer, GameResultsSummary } from '../lib/supabase'
+import { useState } from 'react'
 
 export const useRoom = () => {
   const [connectionState, setConnectionState] = useAtom(connectionStateAtom)
@@ -25,6 +27,11 @@ export const useRoom = () => {
   const [players, setPlayers] = useAtom(playersAtom)
   const [realtimeChannel, setRealtimeChannel] = useAtom(realtimeChannelAtom)
   const [error, setError] = useAtom(errorAtom)
+
+  // 結果取得用の状態
+  const [gameResults, setGameResults] = useState<GameResultsSummary | null>(null)
+  const [resultsLoading, setResultsLoading] = useState(false)
+  const [resultsError, setResultsError] = useState<string | null>(null)
 
   // ルーム作成処理
   const handleCreateRoom = async (params: {
@@ -227,6 +234,46 @@ export const useRoom = () => {
     setError(null)
   }
 
+  // ゲーム結果取得処理
+  const handleGetGameResults = async (roomId?: string) => {
+    const targetRoomId = roomId || currentRoom?.id
+    
+    if (!targetRoomId) {
+      const errorMsg = 'ルームIDが見つかりません'
+      setResultsError(errorMsg)
+      return { success: false, error: errorMsg }
+    }
+
+    setResultsLoading(true)
+    setResultsError(null)
+
+    try {
+      const result = await getGameResults(targetRoomId)
+      
+      if (result.success && result.data) {
+        setGameResults(result.data)
+        setResultsError(null)
+        return { success: true, data: result.data }
+      } else {
+        setResultsError(result.error || '結果の取得に失敗しました')
+        setGameResults(null)
+        return { success: false, error: result.error }
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '不明なエラーが発生しました'
+      setResultsError(errorMsg)
+      setGameResults(null)
+      return { success: false, error: errorMsg }
+    } finally {
+      setResultsLoading(false)
+    }
+  }
+
+  // 結果エラークリア
+  const clearResultsError = () => {
+    setResultsError(null)
+  }
+
   return {
     // 状態
     connectionState,
@@ -234,12 +281,18 @@ export const useRoom = () => {
     currentRoom,
     players,
     error,
+    // 結果関連の状態
+    gameResults,
+    resultsLoading,
+    resultsError,
     // アクション
     createRoom: handleCreateRoom,
     joinRoom: handleJoinRoom,
     leaveRoom: handleLeaveRoom,
     startGame: handleStartGame,
     forceEndGame: handleForceEndGame,
-    clearError
+    getGameResults: handleGetGameResults,
+    clearError,
+    clearResultsError
   }
 }

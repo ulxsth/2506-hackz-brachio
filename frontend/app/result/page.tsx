@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useRoom } from '@/hooks/useRoom';
 
 interface PlayerResult {
   name: string;
@@ -16,52 +17,99 @@ export default function ResultPage() {
   const [results, setResults] = useState<PlayerResult[]>([]);
   const [myResult, setMyResult] = useState<PlayerResult | null>(null);
   const [showAnimation, setShowAnimation] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { getGameResults, gameResults, resultsLoading, resultsError } = useRoom();
 
   useEffect(() => {
-    // ダミーの結果データを生成
-    const dummyResults: PlayerResult[] = [
-      {
-        name: 'タイピング王',
-        score: 1250,
-        rank: 1,
-        wordCount: 28,
-        maxCombo: 12,
-        accuracy: 94.2
-      },
-      {
-        name: 'あなた',
-        score: 1180,
-        rank: 2,
-        wordCount: 24,
-        maxCombo: 8,
-        accuracy: 89.7
-      },
-      {
-        name: 'コード忍者',
-        score: 980,
-        rank: 3,
-        wordCount: 22,
-        maxCombo: 15,
-        accuracy: 86.1
-      },
-      {
-        name: 'IT戦士',
-        score: 820,
-        rank: 4,
-        wordCount: 18,
-        maxCombo: 6,
-        accuracy: 92.3
+    const loadGameResults = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // URLパラメータからルームIDを取得
+        const roomId = searchParams.get('roomId') || searchParams.get('room');
+        
+        if (!roomId) {
+          throw new Error('ルームIDが見つかりません');
+        }
+
+        // 実際のゲーム結果を取得
+        const result = await getGameResults(roomId);
+        
+        if (result.success && result.data) {
+          // 型を変換（API結果→UI表示用）
+          const convertedResults: PlayerResult[] = result.data.results.map((player: any) => ({
+            name: player.name,
+            score: player.score,
+            rank: player.rank,
+            wordCount: player.wordCount,
+            maxCombo: player.maxCombo,
+            accuracy: player.accuracy
+          }));
+
+          setResults(convertedResults);
+          
+          // 自分の結果を特定（name="あなた"または最初のプレイヤー）
+          const myData = convertedResults.find(r => r.name === 'あなた') || convertedResults[0];
+          setMyResult(myData || null);
+        } else {
+          throw new Error(result.error || '結果の取得に失敗しました');
+        }
+      } catch (err) {
+        console.error('結果取得エラー:', err);
+        setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
+        
+        // エラー時はダミーデータにフォールバック
+        const fallbackResults: PlayerResult[] = [
+          {
+            name: 'タイピング王',
+            score: 1250,
+            rank: 1,
+            wordCount: 28,
+            maxCombo: 12,
+            accuracy: 94.2
+          },
+          {
+            name: 'あなた',
+            score: 1180,
+            rank: 2,
+            wordCount: 24,
+            maxCombo: 8,
+            accuracy: 89.7
+          },
+          {
+            name: 'コード忍者',
+            score: 980,
+            rank: 3,
+            wordCount: 22,
+            maxCombo: 15,
+            accuracy: 86.1
+          },
+          {
+            name: 'IT戦士',
+            score: 820,
+            rank: 4,
+            wordCount: 18,
+            maxCombo: 6,
+            accuracy: 92.3
+          }
+        ];
+        
+        setResults(fallbackResults);
+        const myData = fallbackResults.find(r => r.name === 'あなた');
+        setMyResult(myData || null);
+      } finally {
+        setLoading(false);
+        // アニメーション開始
+        setTimeout(() => setShowAnimation(true), 500);
       }
-    ];
+    };
 
-    setResults(dummyResults);
-    const myData = dummyResults.find(r => r.name === 'あなた');
-    setMyResult(myData || null);
-
-    // アニメーション開始
-    setTimeout(() => setShowAnimation(true), 500);
-  }, []);
+    loadGameResults();
+  }, [searchParams, getGameResults]);
 
   const handlePlayAgain = () => {
     router.push('/create-room');
@@ -96,6 +144,39 @@ export default function ResultPage() {
         return 'from-blue-400 to-blue-600';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-2xl p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">結果を集計中...</h2>
+            <p className="text-gray-600">しばらくお待ちください</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-2xl p-8 text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">エラーが発生しました</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-500 mb-6">※ ダミーデータで表示しています</p>
+          <button
+            onClick={() => router.push('/menu')}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200"
+          >
+            メニューに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!myResult) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>;

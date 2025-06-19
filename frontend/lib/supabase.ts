@@ -28,3 +28,36 @@ export interface RealtimeGameUpdate {
   type: 'player_joined' | 'player_left' | 'game_started' | 'score_updated' | 'game_ended'
   data: any
 }
+
+// 結果集計用の型定義
+export interface PlayerGameResult {
+  id: string
+  name: string
+  score: number
+  rank: number
+  wordCount: number
+  maxCombo: number
+  accuracy: number
+  totalSubmissions: number
+  correctSubmissions: number
+}
+
+export interface GameResultsSummary {
+  roomId: string
+  gameSessionId: string
+  totalPlayers: number
+  gameDuration: number | null
+  results: PlayerGameResult[]
+  topPerformers: {
+    highestScore: PlayerGameResult
+    mostWords: PlayerGameResult
+    bestCombo: PlayerGameResult
+    bestAccuracy: PlayerGameResult
+  }
+}
+
+export interface GameResultsResponse {
+  success: boolean
+  data?: GameResultsSummary
+  error?: string
+}
