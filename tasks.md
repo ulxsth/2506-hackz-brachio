@@ -1,53 +1,122 @@
-# 単語スキーマ変更計画 📝
+# Tasks: ITタイピングゲーム実装（制約システム対応）
 
-## 要件 ✅
-単語は表示のためのテキスト（例：スクレイピング）と、それをローマ字に直したもの（例：sukureipingu）が必要になる
+## 📋 現状分析・課題洗い出し
 
-## 現状分析 🔍
+### � 重大な仕様乖離（最優先対応）
 
-### 現在の it_terms テーブル構造
-```sql
-create table public.it_terms (
-  id uuid default gen_random_uuid() primary key,
-  term text not null unique,              -- 現在：IT用語（英語ベース）
-  difficulty_id integer not null,         -- 難易度ID（正規化済み）
-  description text,                       -- 説明
-  aliases text[] default '{}',            -- エイリアス配列
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-```
+#### 1. ゲームの根本的な仕様違い
+**現状**: 指定された単語をローマ字で正確にタイピングする従来型ゲーム
+**要件**: 制約条件（文字制約・カテゴリー制約・文字数制約）に合致するIT用語を**自分で考えて**入力するゲーム
 
-### 現在のシードデータ例
-```sql
--- 現在は全て英語
-('React', 2, 'フロントエンドライブラリ', array['ReactJS']),
-('JavaScript', 1, 'プログラミング言語', array['JS', 'js']),
-('スクレイピング', 2, 'ウェブデータ収集', array['scraping'])
-```
+**影響範囲**:
+- `frontend/app/game/page.tsx` のゲームロジック全体
+- UI表示（現在の用語表示は削除、制約表示を主軸に）
+- 入力検証システム（辞書照合 + 制約チェック）
+- 得点計算式の実装
 
-## 変更計画 📋
+#### 2. 制約システムの未実装
+**現状**: ダミーの制約表示のみ（実際の制約チェック機能なし）
+**要件**: 完全な制約システム実装が必要
 
-### ステップ1: データベーススキーマ変更
-- `term` カラム → `display_text` に変更（表示用日本語テキスト）
-- `romaji_text` カラムを新規追加（ローマ字表記）
+**必要機能**:
+- 文字制約（含む/含まない/始まる/終わる）
+- カテゴリー制約（技術分野指定）
+- 文字数制約（N文字以上/以下）
+- 制約係数の管理・適用
+- 動的難易度調整
+- パス機能（10秒クールダウン）
 
-### ステップ2: 関連ファイル更新
-- `/supabase/migrations/20250619_unified_schema.sql` - スキーマ変更
-- `/supabase/seed.sql` - サンプルデータ更新
-- `/frontend/lib/database.types.ts` - TypeScript型定義更新
+#### 3. 得点計算式の実装不備
+**現状**: `points = Math.floor(word.length * 1.5 * (combo + 1))`
+**要件**: `獲得得点 = 単語文字数 × 難易度(1-10) × 制約係数の積 × コンボ数`
 
-### ステップ3: フロントエンド対応
-- ゲーム画面での表示ロジック更新
-- タイピング入力の判定ロジック更新
-- 制約システムの対応
+### 📁 関連ファイルパス
 
-## 詳細仕様 📄
+#### フロントエンド
+- `frontend/app/game/page.tsx` - メインゲームロジック（大幅改修必要）
+- `frontend/lib/database.types.ts` - 型定義（最新）
+- `frontend/lib/supabase.ts` - Supabase接続設定
 
-### 新しいテーブル構造
-```sql
-create table public.it_terms (
-  id uuid default gen_random_uuid() primary key,
+#### バックエンド・データベース
+- `supabase/migrations/20250619_unified_schema.sql` - DBスキーマ（最新）
+- `supabase/seed.sql` - サンプルデータ（最新）
+
+#### 仕様・設計書
+- `docs/plan.md` - 企画書（制約システム詳細）
+- `docs/requirements.md` - 要件定義（機能詳細）
+
+## 🎯 実装計画（段階別）
+
+### Phase 1: 制約システム基盤構築
+1. **制約データ管理**
+   - 制約タイプ・制約係数のマスタデータ追加
+   - 制約組み合わせパターンの事前定義
+   
+2. **制約生成・表示機能**
+   - ランダム制約生成ロジック
+   - 制約の可視化UI改善
+
+### Phase 2: ゲームロジック改修
+1. **入力検証システム**
+   - IT用語辞書との照合機能
+   - 制約条件チェック機能
+   - 複数制約の組み合わせ対応
+
+2. **得点計算式の正確な実装**
+   - 難易度係数の取得・適用
+   - 制約係数の積算
+   - コンボ数の正確な反映
+
+### Phase 3: UI/UX改善
+1. **ゲーム画面の改修**
+   - 現在の用語表示を削除
+   - 制約表示の強化
+   - ヘルプ・説明文の追加
+
+2. **パス機能の実装**
+   - 10秒クールダウンシステム
+   - 制約変更ロジック
+
+### Phase 4: 高度機能実装
+1. **動的難易度調整**
+   - プレイヤー成績に応じた制約選択
+   - 上位/下位プレイヤー向け制約セット
+
+2. **リアルタイム同期強化**
+   - ゲーム状態の同期
+   - プレイヤー間のスコア競争
+
+## 🔧 技術的課題・検討事項
+
+### データベース設計
+- 制約マスタテーブルの追加検討
+- 制約組み合わせパターンの保存方法
+- 動的制約生成 vs 事前定義制約
+
+### パフォーマンス
+- リアルタイム辞書検索の最適化
+- 制約チェック処理の効率化
+- フロントエンド状態管理の改善
+
+### ユーザビリティ
+- 制約の分かりやすい表示方法
+- 入力ヒント・補助機能
+- エラーハンドリング・フィードバック改善
+
+---
+
+## ⚡ Next Actions
+
+**最優先**: Phase 1 から順次実装開始
+**デバッグ推奨**: 各Phase完了後にテスト・動作確認
+**Git管理**: 各Phase完了時にsemantic commitでバージョン管理
+
+## 完了項目 ✅
+- [x] DBスキーマの統一（it_terms: display_text + romaji_text）
+- [x] Seedデータの整理・厳選
+- [x] TypeScript型定義の更新
+- [x] フロントエンド基本データ取得の実装
+- [x] ビルドエラーの修正
   display_text text not null,             -- 表示用テキスト（例：スクレイピング）
   romaji_text text not null unique,       -- ローマ字テキスト（例：sukureipingu）
   difficulty_id integer not null,
