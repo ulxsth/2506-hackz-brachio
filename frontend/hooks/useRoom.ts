@@ -152,10 +152,6 @@ export const useRoom = () => {
     } else {
       setError(result.error || '不明なエラーが発生しました')
       setConnectionState('disconnected')
-      // エラー時は状態をクリーンアップ
-      setCurrentRoom(null)
-      setPlayers([])
-      setRealtimeChannel(null)
     }
 
     return result
