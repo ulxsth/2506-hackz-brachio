@@ -482,3 +482,90 @@ export const getGameResults = async (roomId: string): Promise<{
     return { success: false, error: errorMessage }
   }
 }
+
+// 単語提出処理
+export const submitWord = async (params: {
+  gameSessionId: string
+  playerId: string
+  word: string
+  score: number
+  comboAtTime: number
+  isValid: boolean
+  constraintsMet: any[]
+}): Promise<{ success: boolean; error?: string }> => {
+  try {
+    debugLog('📝 submitWord: 単語提出開始', params)
+    
+    const { error } = await supabase
+      .from('word_submissions')
+      .insert({
+        game_session_id: params.gameSessionId,
+        player_id: params.playerId,
+        word: params.word,
+        score: params.score,
+        combo_at_time: params.comboAtTime,
+        constraints_met: params.constraintsMet,
+        is_valid: params.isValid
+      })
+
+    if (error) {
+      debugLog('❌ submitWord: エラー', error)
+      throw error
+    }
+
+    debugLog('✅ submitWord: 単語提出成功')
+    return { success: true }
+
+  } catch (error) {
+    debugLog('💥 submitWord: エラー発生', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: errorMessage }
+  }
+}
+
+// プレイヤースコア更新処理
+export const updatePlayerScore = async (params: {
+  playerId: string
+  roomId: string
+  scoreToAdd: number
+  newCombo: number
+}): Promise<{ success: boolean; error?: string }> => {
+  try {
+    debugLog('🎯 updatePlayerScore: スコア更新開始', params)
+    
+    // 現在のスコアを取得
+    const { data: currentPlayer, error: fetchError } = await supabase
+      .from('room_players')
+      .select('score')
+      .eq('id', params.playerId)
+      .eq('room_id', params.roomId)
+      .single()
+
+    if (fetchError || !currentPlayer) {
+      throw fetchError || new Error('プレイヤーが見つかりません')
+    }
+
+    // 新しいスコアで更新
+    const { error } = await supabase
+      .from('room_players')
+      .update({
+        score: currentPlayer.score + params.scoreToAdd,
+        combo: params.newCombo
+      })
+      .eq('id', params.playerId)
+      .eq('room_id', params.roomId)
+
+    if (error) {
+      debugLog('❌ updatePlayerScore: エラー', error)
+      throw error
+    }
+
+    debugLog('✅ updatePlayerScore: スコア更新成功')
+    return { success: true }
+
+  } catch (error) {
+    debugLog('💥 updatePlayerScore: エラー発生', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: errorMessage }
+  }
+}

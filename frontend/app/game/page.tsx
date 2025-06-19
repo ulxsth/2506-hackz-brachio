@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useRoom } from '@/hooks/useRoom';
+import { submitWord, updatePlayerScore } from '@/lib/room';
 import type { Database } from '@/lib/database.types';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
@@ -31,6 +32,7 @@ export default function GamePage() {
   const [myRank, setMyRank] = useState(1);
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [constraint, setConstraint] = useState<Constraint>({
     type: '文字制約',
     description: '「a」を含む単語',
@@ -87,7 +89,7 @@ export default function GamePage() {
     };
   };
 
-  // Supabaseから用語データを取得 & 初期制約生成
+  // Supabaseから用語データを取得 & 初期制約生成 & ゲームセッションID取得
   useEffect(() => {
     const fetchTerms = async () => {
       const { data, error } = await supabase
@@ -100,11 +102,33 @@ export default function GamePage() {
       }
     };
     
+    // 現在のゲームセッションIDを取得
+    const fetchGameSession = async () => {
+      if (!currentRoom?.id) return;
+
+      const { data, error } = await supabase
+        .from('game_sessions')
+        .select('id')
+        .eq('room_id', currentRoom.id)
+        .eq('status', 'playing')
+        .order('start_time', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (data && !error) {
+        setGameSessionId(data.id);
+        console.log('🎮 ゲームセッションID取得:', data.id);
+      } else {
+        console.error('❌ ゲームセッションID取得失敗:', error);
+      }
+    };
+    
     fetchTerms();
+    fetchGameSession();
     
     // 初回のランダム制約を生成
     setConstraint(generateRandomConstraint());
-  }, []);
+  }, [currentRoom?.id]);
 
   useEffect(() => {
     // タイマー
@@ -165,11 +189,11 @@ export default function GamePage() {
     }
   }, [players.map(p => p.score).join(',')]);
 
-  const handleInputSubmit = (e: React.FormEvent) => {
+  const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const word = currentInput.toLowerCase().trim();
     
-    if (!word) return;
+    if (!word || !user || !currentRoom || !gameSessionId) return;
 
     // 指定文字制約チェック + 辞書照合
     let isValid = false;
@@ -188,18 +212,18 @@ export default function GamePage() {
       }
     }
 
+    // 新しいコンボ値を計算
+    const newCombo = isValid ? combo + 1 : 0;
+
     if (isValid && matchedTerm) {
       // 新しい得点計算式: 単語文字数 × 難易度 × 制約係数 × コンボ数
-      points = word.length * matchedTerm.difficulty_id * constraint.coefficient * (combo + 1);
+      points = word.length * matchedTerm.difficulty_id * constraint.coefficient * newCombo;
       
+      // フロントエンド状態更新
       setMyScore(prev => prev + points);
-      setCombo(prev => {
-        const newCombo = prev + 1;
-        setMaxCombo(max => Math.max(max, newCombo));
-        return newCombo;
-      });
-      
-      setFeedback(`正解！「${matchedTerm.display_text}」 +${points}点 (${combo + 1}コンボ) [${constraint.letter}:x${constraint.coefficient}]`);
+      setCombo(newCombo);
+      setMaxCombo(max => Math.max(max, newCombo));
+      setFeedback(`正解！「${matchedTerm.display_text}」 +${points}点 (${newCombo}コンボ) [${constraint.letter}:x${constraint.coefficient}]`);
       setWords(prev => [...prev, matchedTerm.display_text]);
 
       // プレイヤーリストの自分のスコアを更新
@@ -208,6 +232,32 @@ export default function GamePage() {
           ? { ...player, score: player.score + points }
           : player
       ));
+
+      // 🔥 データベースに更新を反映
+      try {
+        // 1. 単語提出を記録
+        await submitWord({
+          gameSessionId: gameSessionId,
+          playerId: user.id,
+          word: matchedTerm.display_text,
+          score: points,
+          comboAtTime: newCombo,
+          isValid: true,
+          constraintsMet: [{ letter: constraint.letter, coefficient: constraint.coefficient }]
+        });
+
+        // 2. プレイヤースコアを更新
+        await updatePlayerScore({
+          playerId: user.id,
+          roomId: currentRoom.id,
+          scoreToAdd: points,
+          newCombo: newCombo
+        });
+
+        console.log('✅ DB更新成功:', { word, points, newCombo });
+      } catch (error) {
+        console.error('❌ DB更新エラー:', error);
+      }
     } else {
       setCombo(0);
       if (!word.includes(constraint.letter)) {
@@ -215,12 +265,31 @@ export default function GamePage() {
       } else {
         setFeedback('辞書に登録されていない単語です...');
       }
+
+      // 🔥 無効な単語もDBに記録
+      try {
+        await submitWord({
+          gameSessionId: gameSessionId,
+          playerId: user.id,
+          word: word,
+          score: 0,
+          comboAtTime: 0,
+          isValid: false,
+          constraintsMet: []
+        });
+
+        await updatePlayerScore({
+          playerId: user.id,
+          roomId: currentRoom.id,
+          scoreToAdd: 0,
+          newCombo: 0
+        });
+      } catch (error) {
+        console.error('❌ 無効単語のDB記録エラー:', error);
+      }
     }
 
     setCurrentInput('');
-    
-    // フィードバックを3秒後にクリア
-    setTimeout(() => setFeedback(''), 3000);
   };
 
   const handlePass = () => {

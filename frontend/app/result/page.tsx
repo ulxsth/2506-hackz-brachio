@@ -286,7 +286,7 @@ export default function ResultPage() {
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-2">平均得点/単語</div>
               <div className="text-2xl font-bold text-gray-800">
-                {Math.round(myResult.score / myResult.wordCount)}
+                {myResult.wordCount > 0 ? Math.round(myResult.score / myResult.wordCount) : 0}
               </div>
               <div className="text-sm text-gray-600">pts/word</div>
             </div>
