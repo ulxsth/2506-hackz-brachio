@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
-          query?: string
           operationName?: string
-          extensions?: Json
           variables?: Json
+          extensions?: Json
+          query?: string
         }
         Returns: Json
       }
@@ -102,8 +102,9 @@ export type Database = {
           created_at: string
           description: string | null
           difficulty_id: number
+          display_text: string
           id: string
-          term: string
+          romaji_text: string
           updated_at: string
         }
         Insert: {
@@ -111,8 +112,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           difficulty_id: number
+          display_text: string
           id?: string
-          term: string
+          romaji_text: string
           updated_at?: string
         }
         Update: {
@@ -120,8 +122,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           difficulty_id?: number
+          display_text?: string
           id?: string
-          term?: string
+          romaji_text?: string
           updated_at?: string
         }
         Relationships: [

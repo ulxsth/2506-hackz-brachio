@@ -100,7 +100,8 @@ create table public.difficulties (
 -- 2.2 it_terms (IT用語辞書) - 正規化版
 create table public.it_terms (
   id uuid default gen_random_uuid() primary key,
-  term text not null unique,
+  display_text text not null,                                                    -- 表示用テキスト（日本語）
+  romaji_text text not null unique,                                             -- ローマ字テキスト（タイピング用）
   difficulty_id integer not null references public.difficulties(id),
   description text,
   aliases text[] default '{}',
@@ -108,7 +109,8 @@ create table public.it_terms (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   
   -- 制約
-  constraint it_terms_term_length check (char_length(term) between 1 and 50)
+  constraint it_terms_display_text_length check (char_length(display_text) between 1 and 50),
+  constraint it_terms_romaji_text_length check (char_length(romaji_text) between 1 and 50)
 );
 
 -- =============================================
@@ -374,8 +376,10 @@ create index idx_word_submissions_game_player on public.word_submissions(game_se
 
 -- IT用語関連インデックス
 create index idx_it_terms_difficulty_id on public.it_terms(difficulty_id);
-create index idx_it_terms_term on public.it_terms(term);
-create index idx_it_terms_term_trgm on public.it_terms using gin (term gin_trgm_ops);
+create index idx_it_terms_display_text on public.it_terms(display_text);
+create index idx_it_terms_romaji_text on public.it_terms(romaji_text);
+create index idx_it_terms_display_text_trgm on public.it_terms using gin (display_text gin_trgm_ops);
+create index idx_it_terms_romaji_text_trgm on public.it_terms using gin (romaji_text gin_trgm_ops);
 
 -- ゲーム同期システム用インデックス
 create index idx_player_ready_states_room_id on public.player_ready_states(room_id);
@@ -433,7 +437,7 @@ comment on table public.room_players is 'ルーム参加プレイヤー情報';
 comment on table public.game_sessions is 'ゲームセッション管理';
 comment on table public.word_submissions is '単語提出履歴';
 comment on table public.difficulties is '難易度レベルマスター';
-comment on table public.it_terms is 'IT用語辞書（正規化版）';
+comment on table public.it_terms is 'IT用語辞書（表示用テキストとローマ字表記対応版）';
 comment on table public.player_ready_states is 'プレイヤーのゲーム開始準備状態を管理するテーブル';
 
 comment on function get_server_time() is 'サーバーの現在時刻を取得（クライアント時刻同期用）';

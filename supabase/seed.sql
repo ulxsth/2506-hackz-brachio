@@ -1,6 +1,6 @@
 -- =============================================
 -- TYPE 2 LIVE - Seed Data
--- シンプル版（カテゴリ機能削除済み）
+-- 表示用テキスト（日本語）+ ローマ字テキスト対応
 -- =============================================
 
 -- 難易度
@@ -11,55 +11,40 @@ insert into public.difficulties (name, level, description) values
   ('expert', 4, 'エキスパートレベル');
 
 -- =============================================
--- IT用語サンプルデータ
+-- IT用語サンプルデータ（厳選）
 -- =============================================
 
--- Web開発関連の用語
-insert into public.it_terms (term, difficulty_id, description, aliases) values
-  ('JavaScript', 1, 'プログラミング言語', array['JS', 'javascript']),
-  ('TypeScript', 2, 'JavaScriptの上位互換言語', array['TS', 'typescript']),
-  ('React', 2, 'フロントエンドライブラリ', array['ReactJS']),
-  ('Next.js', 3, 'React フレームワーク', array['NextJS']),
-  ('HTML', 1, 'マークアップ言語', array['html']),
-  ('CSS', 1, 'スタイルシート言語', array['css']),
-  ('Node.js', 2, 'JavaScript ランタイム', array['NodeJS', 'Node']);
+-- 基本的な英単語系（短くてタイピングしやすい）
+insert into public.it_terms (display_text, romaji_text, difficulty_id, description, aliases) values
+  ('html', 'html', 1, 'マークアップ言語', array['HTML']),
+  ('css', 'css', 1, 'スタイルシート言語', array['CSS']),
+  ('js', 'js', 1, 'JavaScript略称', array['JavaScript']),
+  ('api', 'api', 2, 'プログラムインターフェース', array['API']),
+  ('sql', 'sql', 1, '構造化クエリ言語', array['SQL']),
+  ('git', 'git', 2, 'バージョン管理', array['Git']),
+  ('aws', 'aws', 2, 'クラウドサービス', array['AWS']),
+  ('app', 'app', 1, 'アプリケーション', array['application']),
+  ('web', 'web', 1, 'ウェブ', array['World Wide Web']),
+  ('json', 'json', 2, 'データ形式', array['JSON']),
+  ('http', 'http', 1, '通信プロトコル', array['HTTP']),
+  ('ui', 'ui', 1, 'ユーザーインターフェース', array['UI']),
+  ('docker', 'docker', 3, 'コンテナ技術', array['Docker']),
+  ('python', 'python', 1, 'プログラミング言語', array['Python']),
+  ('java', 'java', 2, 'プログラミング言語', array['Java']);
 
--- データベース関連の用語
-insert into public.it_terms (term, difficulty_id, description, aliases) values
-  ('SQL', 1, '構造化クエリ言語', array['sql']),
-  ('PostgreSQL', 2, 'オープンソースRDB', array['Postgres', 'postgres']),
-  ('MySQL', 2, 'オープンソースRDB', array['mysql']),
-  ('MongoDB', 2, 'NoSQLデータベース', array['mongo']),
-  ('Redis', 3, 'インメモリデータベース', array['redis']);
-
--- AI・機械学習関連の用語
-insert into public.it_terms (term, difficulty_id, description, aliases) values
-  ('Python', 1, 'プログラミング言語', array['python']),
-  ('TensorFlow', 3, '機械学習ライブラリ', array['tensorflow']),
-  ('PyTorch', 3, '機械学習ライブラリ', array['pytorch']),
-  ('Jupyter', 2, 'データ分析環境', array['jupyter']),
-  ('NumPy', 2, '数値計算ライブラリ', array['numpy']);
-
--- セキュリティ関連の用語
-insert into public.it_terms (term, difficulty_id, description, aliases) values
-  ('HTTPS', 2, 'セキュアHTTP', array['https']),
-  ('OAuth', 3, '認証フレームワーク', array['oauth']),
-  ('JWT', 3, 'JSON Web Token', array['jwt']),
-  ('SSL', 2, 'セキュリティプロトコル', array['ssl']),
-  ('TLS', 3, 'セキュリティプロトコル', array['tls']);
-
--- インフラ・クラウド関連の用語
-insert into public.it_terms (term, difficulty_id, description, aliases) values
-  ('Docker', 2, 'コンテナ技術', array['docker']),
-  ('Kubernetes', 4, 'コンテナオーケストレーション', array['k8s', 'K8s']),
-  ('AWS', 2, 'クラウドサービス', array['aws']),
-  ('Terraform', 3, 'インフラコード管理', array['terraform']),
-  ('CI/CD', 3, '継続的インテグレーション', array['cicd']);
-
--- プログラミング言語関連の用語
-insert into public.it_terms (term, difficulty_id, description, aliases) values
-  ('Java', 2, 'プログラミング言語', array['java']),
-  ('Go', 2, 'プログラミング言語', array['Golang', 'golang']),
-  ('Rust', 3, 'プログラミング言語', array['rust']),
-  ('Swift', 2, 'プログラミング言語', array['swift']),
-  ('Kotlin', 2, 'プログラミング言語', array['kotlin']);
+-- 日本語カタカナ系（適度な長さ）
+insert into public.it_terms (display_text, romaji_text, difficulty_id, description, aliases) values
+  ('ブログ', 'burogu', 1, 'ウェブログ', array['blog']),
+  ('チャット', 'chatto', 1, 'リアルタイム会話', array['chat']),
+  ('ファイル', 'fairu', 1, 'データファイル', array['file']),
+  ('テスト', 'tesuto', 1, '動作確認', array['test']),
+  ('デバッグ', 'debaggu', 2, 'バグ修正', array['debug']),
+  ('キャッシュ', 'kyasshu', 2, 'データ高速化', array['cache']),
+  ('サーバー', 'saabaa', 1, 'サービス提供システム', array['server']),
+  ('データベース', 'deetabeesu', 1, 'データ管理システム', array['database']),
+  ('アルゴリズム', 'arugorizu', 2, '問題解決手順', array['algorithm']),
+  ('スクレイピング', 'sukureipingu', 2, 'ウェブデータ収集', array['scraping']),
+  ('フレームワーク', 'fureemuwaaku', 2, '開発基盤', array['framework']),
+  ('バックエンド', 'bakkuendo', 2, 'サーバーサイド', array['backend']),
+  ('フロントエンド', 'furontoendo', 2, 'クライアントサイド', array['frontend']),
+  ('デプロイ', 'depuroi', 2, 'アプリ配布', array['deploy']);

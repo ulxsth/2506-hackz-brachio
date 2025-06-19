@@ -1,7 +1,22 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import type { Database } from '@/lib/database.types';
+
+type ITTerm = Database['public']['Tables']['it_terms']['Row'];
+
+interface Player {
+  name: string;
+  score: number;
+  rank: number;
+}
+
+interface Constraint {
+  type: string;
+  description: string;
+}
 
 interface Player {
   name: string;
@@ -35,15 +50,31 @@ export default function GamePage() {
   const [passCountdown, setPassCountdown] = useState(0);
   const [feedback, setFeedback] = useState<string>('');
   const [words, setWords] = useState<string[]>([]);
+  const [currentTerm, setCurrentTerm] = useState<ITTerm | null>(null);
+  const [itTerms, setItTerms] = useState<ITTerm[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // ダミーのIT用語リスト
-  const itTerms = [
-    'algorithm', 'apache', 'api', 'array', 'backend', 'cache', 'css', 'database',
-    'docker', 'express', 'framework', 'git', 'html', 'javascript', 'kubernetes',
-    'linux', 'mongodb', 'nodejs', 'python', 'react', 'server', 'typescript'
-  ];
+  // Supabaseから用語データを取得
+  useEffect(() => {
+    const fetchTerms = async () => {
+      const { data, error } = await supabase
+        .from('it_terms')
+        .select('*')
+        .order('difficulty_id', { ascending: true });
+      
+      if (data && !error) {
+        setItTerms(data);
+        // ランダムな最初の用語を設定
+        if (data.length > 0) {
+          const randomIndex = Math.floor(Math.random() * data.length);
+          setCurrentTerm(data[randomIndex]);
+        }
+      }
+    };
+    
+    fetchTerms();
+  }, []);
 
   useEffect(() => {
     // タイマー
@@ -107,18 +138,29 @@ export default function GamePage() {
     e.preventDefault();
     const word = currentInput.toLowerCase().trim();
     
-    if (!word) return;
+    if (!word || !currentTerm) return;
 
-    // 制約チェック（ダミー実装）
+    // ローマ字での正解判定
     let isValid = false;
     let points = 0;
 
-    if (constraint.description.includes('「a」を含む') && word.includes('a')) {
+    // メインの判定：現在の用語のローマ字と一致するか
+    if (word === currentTerm.romaji_text.toLowerCase()) {
       isValid = true;
+    } 
+    // 制約チェック（従来の制約システム）
+    else if (constraint.description.includes('「a」を含む') && word.includes('a')) {
+      // 制約に合う他の用語かチェック
+      const matchingTerm = itTerms.find(term => 
+        term.romaji_text.toLowerCase().includes('a') && word === term.romaji_text.toLowerCase()
+      );
+      if (matchingTerm) isValid = true;
     } else if (constraint.description.includes('5文字以上') && word.length >= 5) {
-      isValid = true;
-    } else if (itTerms.includes(word)) {
-      isValid = true;
+      // 5文字以上の用語かチェック
+      const matchingTerm = itTerms.find(term => 
+        term.romaji_text.length >= 5 && word === term.romaji_text.toLowerCase()
+      );
+      if (matchingTerm) isValid = true;
     }
 
     if (isValid) {
@@ -130,8 +172,11 @@ export default function GamePage() {
         setMaxCombo(max => Math.max(max, newCombo));
         return newCombo;
       });
-      setFeedback(`正解！ +${points}点 (${combo + 1}コンボ)`);
-      setWords(prev => [...prev, word]);
+      setFeedback(`正解！「${currentTerm.display_text}」 +${points}点 (${combo + 1}コンボ)`);
+      setWords(prev => [...prev, currentTerm.display_text]);
+      
+      // 新しい用語を設定
+      setCurrentTerm(itTerms[Math.floor(Math.random() * itTerms.length)]);
 
       // プレイヤーリストの自分のスコアを更新
       setPlayers(prev => prev.map(player => 
@@ -236,16 +281,33 @@ export default function GamePage() {
               </div>
             </div>
 
+            {/* 現在の用語表示 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">現在の用語</h2>
+              {currentTerm ? (
+                <div className="bg-gradient-to-r from-blue-100 to-green-100 rounded-lg p-6 text-center">
+                  <div className="text-3xl font-bold text-gray-800 mb-2">
+                    {currentTerm.display_text}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    ローマ字で入力してください: {currentTerm.romaji_text}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">用語を読み込み中...</div>
+              )}
+            </div>
+
             {/* タイピング入力エリア */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">単語を入力</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">ローマ字を入力</h2>
               <form onSubmit={handleInputSubmit} className="space-y-4">
                 <input
                   ref={inputRef}
                   type="text"
                   value={currentInput}
                   onChange={(e) => setCurrentInput(e.target.value)}
-                  placeholder="IT用語を入力してください"
+                  placeholder={currentTerm ? `例: ${currentTerm.romaji_text}` : "ローマ字を入力してください"}
                   className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   autoFocus
                 />
