@@ -58,7 +58,7 @@ export default function RoomPage() {
 
   const isHost = user && currentRoom.host_id === user.id;
   const canStartGame = isHost && players.length >= 2;
-  const settings = currentRoom.settings as { timeLimit: number; maxPlayers: number; category: string };
+  const settings = currentRoom.settings as { timeLimit: number; maxPlayers: number };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4">

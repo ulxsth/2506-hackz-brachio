@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
-          operationName?: string
           query?: string
-          variables?: Json
+          operationName?: string
           extensions?: Json
+          variables?: Json
         }
         Returns: Json
       }
@@ -34,27 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: number
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: number
-          name: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: number
-          name?: string
-        }
-        Relationships: []
-      }
       difficulties: {
         Row: {
           created_at: string
@@ -113,39 +92,6 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      it_term_categories: {
-        Row: {
-          category_id: number
-          created_at: string
-          it_term_id: string
-        }
-        Insert: {
-          category_id: number
-          created_at?: string
-          it_term_id: string
-        }
-        Update: {
-          category_id?: number
-          created_at?: string
-          it_term_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "it_term_categories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "it_term_categories_it_term_id_fkey"
-            columns: ["it_term_id"]
-            isOneToOne: false
-            referencedRelation: "it_terms"
             referencedColumns: ["id"]
           },
         ]
@@ -409,8 +355,8 @@ export type Database = {
       start_game_preparation: {
         Args: {
           p_room_id: string
-          p_preparation_timeout?: number
           p_countdown_duration?: number
+          p_preparation_timeout?: number
         }
         Returns: Json
       }
@@ -420,12 +366,12 @@ export type Database = {
       }
       update_player_ready_state: {
         Args: {
-          p_assets_loaded?: boolean
-          p_latency_ms?: number
-          p_ui_ready?: boolean
           p_network_ready?: boolean
-          p_room_id: string
+          p_assets_loaded?: boolean
+          p_ui_ready?: boolean
           p_player_id: string
+          p_latency_ms?: number
+          p_room_id: string
         }
         Returns: Json
       }

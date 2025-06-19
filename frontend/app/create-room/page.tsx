@@ -8,7 +8,6 @@ export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState('');
   const [timeLimit, setTimeLimit] = useState(5);
   const [maxPlayers, setMaxPlayers] = useState(4);
-  const [category, setCategory] = useState('all');
   const [error, setError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const {
@@ -46,8 +45,7 @@ export default function CreateRoomPage() {
         roomId: roomCode,
         settings: {
           timeLimit,
-          maxPlayers,
-          category
+          maxPlayers
         }
       });
 
@@ -144,26 +142,6 @@ export default function CreateRoomPage() {
               />
               <p className="text-xs text-gray-500 mt-1">2人以上100人以下で設定してください</p>
             </div>
-
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                カテゴリー設定
-              </label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-              >
-                <option value="all">全分野</option>
-                <option value="web">Web開発</option>
-                <option value="database">データベース</option>
-                <option value="ai">AI・機械学習</option>
-                <option value="security">セキュリティ</option>
-                <option value="infrastructure">インフラ・クラウド</option>
-                <option value="programming">プログラミング言語</option>
-              </select>
-            </div>
           </div>
 
           <div className="bg-blue-50 rounded-lg p-4">
@@ -172,15 +150,6 @@ export default function CreateRoomPage() {
               <p>• あいことば: <span className="font-mono bg-white px-2 py-1 rounded">{roomCode || '未設定'}</span></p>
               <p>• 制限時間: {timeLimit}分</p>
               <p>• 最大人数: {maxPlayers}人</p>
-              <p>• カテゴリー: {
-                category === 'all' ? '全分野' :
-                category === 'web' ? 'Web開発' :
-                category === 'database' ? 'データベース' :
-                category === 'ai' ? 'AI・機械学習' :
-                category === 'security' ? 'セキュリティ' :
-                category === 'infrastructure' ? 'インフラ・クラウド' :
-                category === 'programming' ? 'プログラミング言語' : '全分野'
-              }</p>
             </div>
           </div>
 

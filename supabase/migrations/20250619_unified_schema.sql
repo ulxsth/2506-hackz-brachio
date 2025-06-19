@@ -88,15 +88,7 @@ create table public.word_submissions (
 -- 2. マスターテーブル作成 (正規化)
 -- =============================================
 
--- 2.1 categories (カテゴリーマスター)
-create table public.categories (
-  id serial primary key,
-  name text not null unique,
-  description text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- 2.2 difficulties (難易度マスター)
+-- 2.1 difficulties (難易度マスター)
 create table public.difficulties (
   id serial primary key,
   name text not null unique,
@@ -105,7 +97,7 @@ create table public.difficulties (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 2.3 it_terms (IT用語辞書) - 正規化版
+-- 2.2 it_terms (IT用語辞書) - 正規化版
 create table public.it_terms (
   id uuid default gen_random_uuid() primary key,
   term text not null unique,
@@ -117,16 +109,6 @@ create table public.it_terms (
   
   -- 制約
   constraint it_terms_term_length check (char_length(term) between 1 and 50)
-);
-
--- 2.4 it_term_categories (多対多中間テーブル) - 🎯 新規追加
-create table public.it_term_categories (
-  it_term_id uuid not null references public.it_terms(id) on delete cascade,
-  category_id integer not null references public.categories(id) on delete cascade,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  
-  -- 複合主キー
-  primary key (it_term_id, category_id)
 );
 
 -- =============================================
@@ -395,10 +377,6 @@ create index idx_it_terms_difficulty_id on public.it_terms(difficulty_id);
 create index idx_it_terms_term on public.it_terms(term);
 create index idx_it_terms_term_trgm on public.it_terms using gin (term gin_trgm_ops);
 
--- 多対多中間テーブル用インデックス - 🎯 新規追加
-create index idx_it_term_categories_it_term_id on public.it_term_categories(it_term_id);
-create index idx_it_term_categories_category_id on public.it_term_categories(category_id);
-
 -- ゲーム同期システム用インデックス
 create index idx_player_ready_states_room_id on public.player_ready_states(room_id);
 create index idx_player_ready_states_ready_at on public.player_ready_states(ready_at);
@@ -413,10 +391,8 @@ alter table public.rooms enable row level security;
 alter table public.room_players enable row level security;
 alter table public.game_sessions enable row level security;
 alter table public.word_submissions enable row level security;
-alter table public.categories enable row level security;
 alter table public.difficulties enable row level security;
 alter table public.it_terms enable row level security;
-alter table public.it_term_categories enable row level security;
 alter table public.player_ready_states enable row level security;
 
 -- 開発用：全操作許可ポリシー
@@ -424,10 +400,8 @@ create policy "Allow all operations on rooms" on public.rooms for all using (tru
 create policy "Allow all operations on room_players" on public.room_players for all using (true);
 create policy "Allow all operations on game_sessions" on public.game_sessions for all using (true);
 create policy "Allow all operations on word_submissions" on public.word_submissions for all using (true);
-create policy "Allow all operations on categories" on public.categories for all using (true);
 create policy "Allow all operations on difficulties" on public.difficulties for all using (true);
 create policy "Allow all operations on it_terms" on public.it_terms for all using (true);
-create policy "Allow all operations on it_term_categories" on public.it_term_categories for all using (true);
 create policy "Allow all operations on player_ready_states" on public.player_ready_states for all using (true);
 
 -- =============================================
@@ -439,10 +413,8 @@ alter publication supabase_realtime add table public.rooms;
 alter publication supabase_realtime add table public.room_players;
 alter publication supabase_realtime add table public.game_sessions;
 alter publication supabase_realtime add table public.word_submissions;
-alter publication supabase_realtime add table public.categories;
 alter publication supabase_realtime add table public.difficulties;
 alter publication supabase_realtime add table public.it_terms;
-alter publication supabase_realtime add table public.it_term_categories;
 alter publication supabase_realtime add table public.player_ready_states;
 
 -- =============================================
@@ -460,10 +432,8 @@ comment on table public.rooms is 'ゲームルーム管理テーブル';
 comment on table public.room_players is 'ルーム参加プレイヤー情報';
 comment on table public.game_sessions is 'ゲームセッション管理';
 comment on table public.word_submissions is '単語提出履歴';
-comment on table public.categories is 'IT用語のカテゴリーマスター';
 comment on table public.difficulties is '難易度レベルマスター';
 comment on table public.it_terms is 'IT用語辞書（正規化版）';
-comment on table public.it_term_categories is 'IT用語とカテゴリーの多対多関係';
 comment on table public.player_ready_states is 'プレイヤーのゲーム開始準備状態を管理するテーブル';
 
 comment on function get_server_time() is 'サーバーの現在時刻を取得（クライアント時刻同期用）';
