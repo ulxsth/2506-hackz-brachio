@@ -1,4 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useCallback } from 'react'
 import {
   connectionStateAtom,
   userAtom,
@@ -235,7 +236,7 @@ export const useRoom = () => {
   }
 
   // ゲーム結果取得処理
-  const handleGetGameResults = async (roomId?: string) => {
+  const handleGetGameResults = useCallback(async (roomId?: string) => {
     const targetRoomId = roomId || currentRoom?.id
     
     if (!targetRoomId) {
@@ -267,7 +268,7 @@ export const useRoom = () => {
     } finally {
       setResultsLoading(false)
     }
-  }
+  }, [currentRoom?.id]) // currentRoom?.idのみを依存配列に含める
 
   // 結果エラークリア
   const clearResultsError = () => {

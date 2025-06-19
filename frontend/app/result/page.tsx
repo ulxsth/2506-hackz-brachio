@@ -109,7 +109,7 @@ export default function ResultPage() {
     };
 
     loadGameResults();
-  }, [searchParams, getGameResults]);
+  }, [searchParams, getGameResults]); // useCallbackで安定化されたgetGameResultsを使用
 
   const handlePlayAgain = () => {
     router.push('/create-room');
