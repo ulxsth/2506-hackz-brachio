@@ -16,17 +16,8 @@ interface Player {
 interface Constraint {
   type: string;
   description: string;
-}
-
-interface Player {
-  name: string;
-  score: number;
-  rank: number;
-}
-
-interface Constraint {
-  type: string;
-  description: string;
+  letter: string;
+  coefficient: number;
 }
 
 export default function GamePage() {
@@ -38,7 +29,9 @@ export default function GamePage() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [constraint, setConstraint] = useState<Constraint>({
     type: '文字制約',
-    description: '「a」を含む単語'
+    description: '「a」を含む単語',
+    letter: 'a',
+    coefficient: 2
   });
   const [players, setPlayers] = useState<Player[]>([
     { name: 'あなた', score: 0, rank: 1 },
@@ -50,12 +43,48 @@ export default function GamePage() {
   const [passCountdown, setPassCountdown] = useState(0);
   const [feedback, setFeedback] = useState<string>('');
   const [words, setWords] = useState<string[]>([]);
-  const [currentTerm, setCurrentTerm] = useState<ITTerm | null>(null);
   const [itTerms, setItTerms] = useState<ITTerm[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Supabaseから用語データを取得
+  // 制約生成機能
+  const generateRandomConstraint = (): Constraint => {
+    // 文字と係数の定義（出現頻度による難易度設定）
+    const letterCoefficients = [
+      // 一般的な文字（係数2）
+      { letters: ['a', 'e', 'i', 'o', 'u'], coefficient: 2 },
+      // やや一般的な文字（係数3）
+      { letters: ['r', 's', 't', 'n', 'l'], coefficient: 3 },
+      // 中程度の文字（係数4）
+      { letters: ['c', 'd', 'h', 'm', 'p'], coefficient: 4 },
+      // やや希少な文字（係数5）
+      { letters: ['b', 'f', 'g', 'k', 'v', 'w', 'y'], coefficient: 5 },
+      // 希少な文字（係数6-8）
+      { letters: ['j', 'q'], coefficient: 6 },
+      { letters: ['x'], coefficient: 7 },
+      { letters: ['z'], coefficient: 8 }
+    ];
+
+    // 全文字を係数と一緒にフラット化
+    const allLetters: { letter: string; coefficient: number }[] = [];
+    letterCoefficients.forEach(group => {
+      group.letters.forEach(letter => {
+        allLetters.push({ letter, coefficient: group.coefficient });
+      });
+    });
+
+    // ランダムに選択
+    const selected = allLetters[Math.floor(Math.random() * allLetters.length)];
+    
+    return {
+      type: '文字制約',
+      description: `「${selected.letter}」を含む単語`,
+      letter: selected.letter,
+      coefficient: selected.coefficient
+    };
+  };
+
+  // Supabaseから用語データを取得 & 初期制約生成
   useEffect(() => {
     const fetchTerms = async () => {
       const { data, error } = await supabase
@@ -65,15 +94,13 @@ export default function GamePage() {
       
       if (data && !error) {
         setItTerms(data);
-        // ランダムな最初の用語を設定
-        if (data.length > 0) {
-          const randomIndex = Math.floor(Math.random() * data.length);
-          setCurrentTerm(data[randomIndex]);
-        }
       }
     };
     
     fetchTerms();
+    
+    // 初回のランダム制約を生成
+    setConstraint(generateRandomConstraint());
   }, []);
 
   useEffect(() => {
@@ -138,45 +165,38 @@ export default function GamePage() {
     e.preventDefault();
     const word = currentInput.toLowerCase().trim();
     
-    if (!word || !currentTerm) return;
+    if (!word) return;
 
-    // ローマ字での正解判定
+    // 指定文字制約チェック + 辞書照合
     let isValid = false;
     let points = 0;
+    let matchedTerm: ITTerm | null = null;
 
-    // メインの判定：現在の用語のローマ字と一致するか
-    if (word === currentTerm.romaji_text.toLowerCase()) {
-      isValid = true;
-    } 
-    // 制約チェック（従来の制約システム）
-    else if (constraint.description.includes('「a」を含む') && word.includes('a')) {
-      // 制約に合う他の用語かチェック
-      const matchingTerm = itTerms.find(term => 
-        term.romaji_text.toLowerCase().includes('a') && word === term.romaji_text.toLowerCase()
-      );
-      if (matchingTerm) isValid = true;
-    } else if (constraint.description.includes('5文字以上') && word.length >= 5) {
-      // 5文字以上の用語かチェック
-      const matchingTerm = itTerms.find(term => 
-        term.romaji_text.length >= 5 && word === term.romaji_text.toLowerCase()
-      );
-      if (matchingTerm) isValid = true;
+    // 1. 指定文字を含むかチェック
+    if (word.includes(constraint.letter)) {
+      // 2. 辞書内に存在するかチェック
+      matchedTerm = itTerms.find(term => 
+        term.romaji_text.toLowerCase() === word
+      ) || null;
+      
+      if (matchedTerm) {
+        isValid = true;
+      }
     }
 
-    if (isValid) {
-      // 得点計算（制約係数は1.5で固定）
-      points = Math.floor(word.length * 1.5 * (combo + 1));
+    if (isValid && matchedTerm) {
+      // 新しい得点計算式: 単語文字数 × 難易度 × 制約係数 × コンボ数
+      points = word.length * matchedTerm.difficulty_id * constraint.coefficient * (combo + 1);
+      
       setMyScore(prev => prev + points);
       setCombo(prev => {
         const newCombo = prev + 1;
         setMaxCombo(max => Math.max(max, newCombo));
         return newCombo;
       });
-      setFeedback(`正解！「${currentTerm.display_text}」 +${points}点 (${combo + 1}コンボ)`);
-      setWords(prev => [...prev, currentTerm.display_text]);
       
-      // 新しい用語を設定
-      setCurrentTerm(itTerms[Math.floor(Math.random() * itTerms.length)]);
+      setFeedback(`正解！「${matchedTerm.display_text}」 +${points}点 (${combo + 1}コンボ) [${constraint.letter}:x${constraint.coefficient}]`);
+      setWords(prev => [...prev, matchedTerm.display_text]);
 
       // プレイヤーリストの自分のスコアを更新
       setPlayers(prev => prev.map(player => 
@@ -186,7 +206,11 @@ export default function GamePage() {
       ));
     } else {
       setCombo(0);
-      setFeedback('制約に合いません...');
+      if (!word.includes(constraint.letter)) {
+        setFeedback(`「${constraint.letter}」を含む単語を入力してください...`);
+      } else {
+        setFeedback('辞書に登録されていない単語です...');
+      }
     }
 
     setCurrentInput('');
@@ -202,14 +226,12 @@ export default function GamePage() {
     setPassCountdown(10);
     setCombo(0);
     
-    // 新しい制約をランダムに設定
-    const constraints = [
-      { type: '文字制約', description: '「e」を含む単語' },
-      { type: '文字制約', description: '「s」で始まる単語' },
-      { type: '文字数制約', description: '6文字以上の単語' },
-      { type: 'カテゴリー制約', description: 'プログラミング言語' }
-    ];
-    setConstraint(constraints[Math.floor(Math.random() * constraints.length)]);
+    // 制約をランダム生成
+    const newConstraint = generateRandomConstraint();
+    setConstraint(newConstraint);
+
+    setFeedback(`制約変更！「${newConstraint.letter}」を含む単語を入力してください (係数x${newConstraint.coefficient})`);
+    setTimeout(() => setFeedback(''), 3000);
   };
 
   const handleQuitGame = () => {
@@ -260,6 +282,7 @@ export default function GamePage() {
               <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-purple-700">{constraint.type}</span>
+                  <span className="text-sm font-bold text-purple-800">係数 x{constraint.coefficient}</span>
                 </div>
                 <div className="text-lg font-semibold text-gray-800">{constraint.description}</div>
               </div>
@@ -276,38 +299,31 @@ export default function GamePage() {
                   {canPass ? 'パス' : `パス可能まで ${passCountdown}秒`}
                 </button>
                 <div className="text-sm text-gray-600">
-                  制約を変更できます（10秒クールダウン）
+                  制約を再生成できます（10秒クールダウン）
                 </div>
               </div>
             </div>
 
-            {/* 現在の用語表示 */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">現在の用語</h2>
-              {currentTerm ? (
-                <div className="bg-gradient-to-r from-blue-100 to-green-100 rounded-lg p-6 text-center">
-                  <div className="text-3xl font-bold text-gray-800 mb-2">
-                    {currentTerm.display_text}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    ローマ字で入力してください: {currentTerm.romaji_text}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-gray-500">用語を読み込み中...</div>
-              )}
-            </div>
-
             {/* タイピング入力エリア */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">ローマ字を入力</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">「{constraint.letter}」を含むIT用語を入力</h2>
+              <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-4 mb-4">
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-800 mb-2">
+                    🎯 制約条件: 「{constraint.letter}」を含む単語 (係数x{constraint.coefficient})
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    辞書内のIT用語で「{constraint.letter}」を含む単語を入力してください
+                  </div>
+                </div>
+              </div>
               <form onSubmit={handleInputSubmit} className="space-y-4">
                 <input
                   ref={inputRef}
                   type="text"
                   value={currentInput}
                   onChange={(e) => setCurrentInput(e.target.value)}
-                  placeholder={currentTerm ? `例: ${currentTerm.romaji_text}` : "ローマ字を入力してください"}
+                  placeholder={`「${constraint.letter}」を含むIT用語をローマ字で入力してください`}
                   className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   autoFocus
                 />
