@@ -1,172 +1,211 @@
-# Tasks: ITタイピングゲーム実装（制約システム対応）
+# Tasks: 単語データ圧縮・事前処理システム実装
 
-## 📋 現状分析・課題洗い出し
+## 📋 実装計画概要
 
-### � 重大な仕様乖離（最優先対応）
+### 🎯 目標
+現在の29語データをベースに、バイナリ圧縮 + Supabase Storage + 事前インデックス生成システムを実装。開発者が任意のタイミングでファイル生成できる仕組みを構築。
 
-#### 1. ゲームの根本的な仕様違い
-**現状**: 指定された単語をローマ字で正確にタイピングする従来型ゲーム
-**要件**: ランダムに指定されたアルファベット一文字を含むIT用語を**自分で考えて**入力するゲーム
+### 🚀 基本実装範囲（Phase 1）
+1. Supabase Storageへの静的ファイル配置システム
+2. gzip圧縮による基本的な容量削減
+3. 文字インデックスの事前生成
+4. クライアント側での基本的なキャッシュ・展開機能
 
-**影響範囲**:
-- `frontend/app/game/page.tsx` のゲームロジック全体
-- UI表示（現在の用語表示は削除、動的制約表示を主軸に）
-- 入力検証システム（辞書照合 + 指定文字を含むチェック）
-- 得点計算式の実装
+## 📁 関連ファイルパス
 
-#### 2. 制約システムの未実装
-**現状**: ダミーの制約表示のみ（実際の制約チェック機能なし）
-**要件**: 動的文字制約システム実装が必要
+### 新規作成予定
+- `scripts/build-dictionary.js` - 辞書ファイル生成スクリプト
+- `scripts/upload-to-storage.js` - Supabase Storageアップロードスクリプト
+- `frontend/lib/dictionary-loader.ts` - 辞書データローダー
+- `frontend/lib/word-index.ts` - 文字インデックス管理
 
-**必要機能**:
-- ランダムアルファベット一文字の制約生成
-- 文字の希少性による動的係数設定（2-8）
-- パス機能（10秒クールダウン）
-- 動的制約表示
+### 既存ファイル（参照・修正）
+- `supabase/seed.sql` - ソースデータ（29語）
+- `frontend/lib/database.types.ts` - 型定義
+- `frontend/app/game/page.tsx` - ゲームロジック（辞書ローダー統合）
 
-#### 3. 得点計算式の実装不備
-**現状**: `points = Math.floor(word.length * 1.5 * (combo + 1))`
-**要件**: `獲得得点 = 単語文字数 × 難易度(1-10) × 制約係数(2-8) × コンボ数`
+### 設定・環境
+- `package.json` - スクリプト追加
+- `supabase/config.toml` - Storage設定確認
 
-### 📁 関連ファイルパス
+## 🔧 実装ステップ
 
-#### フロントエンド
-- `frontend/app/game/page.tsx` - メインゲームロジック（大幅改修必要）
-- `frontend/lib/database.types.ts` - 型定義（最新）
-- `frontend/lib/supabase.ts` - Supabase接続設定
+### Step 1: 開発用スクリプト作成
+**目的**: 開発者が任意のタイミングで辞書ファイルを生成・更新できるシステム
 
-#### バックエンド・データベース
-- `supabase/migrations/20250619_unified_schema.sql` - DBスキーマ（最新）
-- `supabase/seed.sql` - サンプルデータ（最新）
+#### 1.1 辞書ファイル生成スクリプト
+- **ファイル**: `scripts/build-dictionary.js`
+- **機能**:
+  - Supabaseから最新のit_termsデータ取得
+  - 文字インデックス生成（a-z各文字を含む単語のマッピング）
+  - 最適化されたJSONデータ構造作成
+  - gzip圧縮適用
+  - ローカルdist/ディレクトリに出力
 
-#### 仕様・設計書
-- `docs/plan.md` - 企画書（制約システム詳細）
-- `docs/requirements.md` - 要件定義（機能詳細）
+#### 1.2 Supabase Storageアップロードスクリプト
+- **ファイル**: `scripts/upload-to-storage.js`
+- **機能**:
+  - 生成された圧縮ファイルをSupabase Storageにアップロード
+  - バージョニング機能（タイムスタンプベース）
+  - アップロード結果の確認・ログ出力
 
-## 🎯 実装計画（段階別）
+#### 1.3 package.jsonスクリプト追加
+```json
+{
+  "scripts": {
+    "build:dictionary": "node scripts/build-dictionary.js",
+    "upload:dictionary": "node scripts/upload-to-storage.js",
+    "dict:update": "npm run build:dictionary && npm run upload:dictionary"
+  }
+}
+```
 
-### Phase 1: 「aを含む」制約システム基盤構築
-1. **制約データ管理**
-   - 「aを含む」制約の固定係数2設定
-   - シンプルな制約チェック機能
-   
-2. **制約生成・表示機能**
-   - 「aを含む」制約の固定表示
-   - 制約の可視化UI改善
+### Step 2: データ構造設計
 
-### Phase 2: ゲームロジック改修
-1. **入力検証システム**
-   - IT用語辞書との照合機能
-   - 「a」を含む条件チェック機能
-   - シンプルな制約検証
+#### 2.1 圧縮辞書ファイル構造
+```typescript
+interface CompressedDictionary {
+  metadata: {
+    version: string;
+    wordCount: number;
+    lastUpdated: string;
+    compression: 'gzip';
+  };
+  letterIndex: {
+    [letter: string]: number[]; // 該当文字を含む単語のインデックス配列
+  };
+  words: {
+    id: number;
+    text: string;
+    romaji: string;
+    difficulty: number;
+    description: string;
+    aliases: string[];
+  }[];
+}
+```
 
-2. **得点計算式の正確な実装**
-   - 難易度係数の取得・適用
-   - 制約係数2の固定適用
-   - コンボ数の正確な反映
+#### 2.2 文字インデックス生成ロジック
+```typescript
+function buildLetterIndex(words: ITTerm[]): Record<string, number[]> {
+  const index: Record<string, number[]> = {};
+  
+  // a-z初期化
+  for (let i = 0; i < 26; i++) {
+    const letter = String.fromCharCode(97 + i); // 'a' to 'z'
+    index[letter] = [];
+  }
+  
+  // 各単語の含有文字をインデックス化
+  words.forEach((word, wordIndex) => {
+    const uniqueLetters = new Set(word.text.toLowerCase().match(/[a-z]/g) || []);
+    uniqueLetters.forEach(letter => {
+      index[letter].push(wordIndex);
+    });
+  });
+  
+  return index;
+}
+```
 
-### Phase 3: UI/UX改善
-1. **ゲーム画面の改修**
-   - 現在の用語表示を削除
-   - 「aを含む」制約表示の強化
-   - ヘルプ・説明文の追加
+### Step 3: クライアント側ローダー実装
 
-2. **パス機能の実装**
-   - 10秒クールダウンシステム
-   - 制約再生成ロジック（現在は同じ制約）
+#### 3.1 辞書データローダー
+- **ファイル**: `frontend/lib/dictionary-loader.ts`
+- **機能**:
+  - Supabase Storageから圧縮辞書ファイル取得
+  - gzip展開
+  - メモリキャッシュ管理
+  - エラーハンドリング（フォールバック処理）
 
-### Phase 4: 高度機能実装
-1. **将来的な拡張基盤**
-   - 他の文字制約への拡張準備
-   - 制約切り替えシステムの基盤
+#### 3.2 文字インデックス管理
+- **ファイル**: `frontend/lib/word-index.ts`
+- **機能**:
+  - 指定文字を含む単語の高速検索（O(1)）
+  - 辞書データとの連携
+  - 制約チェック機能
 
-2. **リアルタイム同期強化**
-   - ゲーム状態の同期
-   - プレイヤー間のスコア競争
+### Step 4: ゲームロジック統合
 
-## 🔧 技術的課題・検討事項
+#### 4.1 既存コード修正
+- **ファイル**: `frontend/app/game/page.tsx`
+- **変更内容**:
+  - 現在のSupabase直接クエリを辞書ローダー使用に変更
+  - 高速な制約チェック実装
+  - メモリ使用量の最適化
 
-### データベース設計
-- 「aを含む」制約の固定実装検討
-- シンプルな制約チェック機能
-- 将来的な制約拡張の基盤設計
+#### 4.2 フォールバック処理
+- 辞書ファイル読み込み失敗時は既存のSupabaseクエリに自動切り替え
+- エラー状態の可視化
 
-### パフォーマンス
-- リアルタイム辞書検索の最適化
-- 「a」を含むチェック処理の効率化
-- フロントエンド状態管理の改善
+## 🗂️ ディレクトリ構造（実装後）
 
-### ユーザビリティ
-- 「aを含む」制約の分かりやすい表示
-- 入力ヒント・補助機能
-- エラーハンドリング・フィードバック改善
+```
+scripts/
+├── build-dictionary.js      # 辞書生成
+├── upload-to-storage.js     # アップロード
+└── package.json            # 依存関係
+
+frontend/
+├── lib/
+│   ├── dictionary-loader.ts # 辞書ローダー
+│   ├── word-index.ts       # インデックス管理
+│   └── ...existing files...
+└── ...existing structure...
+
+dist/                        # 生成ファイル
+├── dictionary-v1.0.0.json.gz
+├── dictionary-latest.json.gz
+└── build-log.txt
+
+supabase-storage://
+└── dictionaries/
+    ├── v1.0.0-dictionary.json.gz
+    └── latest/
+        └── dictionary.json.gz
+```
+
+### 動作確認
+- [ ] スクリプトでの辞書ファイル生成成功
+- [ ] gzip圧縮・展開の正常動作
+- [ ] Supabase Storageへのアップロード成功
+- [ ] クライアント側での圧縮ファイル読み込み成功
+- [ ] 文字インデックスによる高速検索動作
+
+## 📝 開発者向け使用方法
+
+### 辞書ファイル更新手順
+```bash
+# 1. Supabaseのseed.sqlを更新
+# 2. データベースに最新データ投入
+npm run supabase:reset
+
+# 3. 辞書ファイル生成・アップロード
+npm run dict:update
+
+# 4. フロントエンド動作確認
+npm run dev
+```
+
+### デバッグ・確認コマンド
+```bash
+# 生成されたファイルサイズ確認
+ls -la dist/
+
+# 圧縮率確認
+npm run build:dictionary -- --verbose
+
+# Supabase Storage確認
+npm run supabase:storage list dictionaries
+```
 
 ---
 
-## ⚡ Next Actions
+## 🎯 今回の作業範囲
 
-**最優先**: Phase 1 から順次実装開始
-**デバッグ推奨**: 各Phase完了後にテスト・動作確認
-**Git管理**: 各Phase完了時にsemantic commitでバージョン管理
+**Step 1.1のみ集中実装**: `scripts/build-dictionary.js`の作成と動作確認
+- 最小限の機能で動作するバージョンを作成
+- 29語データでの検証完了
+- 他のステップは動作確認後に順次追加
 
-## 完了項目 ✅
-- [x] DBスキーマの統一（it_terms: display_text + romaji_text）
-- [x] Seedデータの整理・厳選
-- [x] TypeScript型定義の更新
-- [x] フロントエンド基本データ取得の実装
-- [x] ビルドエラーの修正
-  display_text text not null,             -- 表示用テキスト（例：スクレイピング）
-  romaji_text text not null unique,       -- ローマ字テキスト（例：sukureipingu）
-  difficulty_id integer not null,
-  description text,
-  aliases text[] default '{}',
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-```
-
-### データ例
-```sql
--- 新しいデータ形式
-('リアクト', 'riakuto', 2, 'フロントエンドライブラリ', array['React', 'ReactJS']),
-('ジャバスクリプト', 'jabasukuriputo', 1, 'プログラミング言語', array['JavaScript', 'JS']),
-('スクレイピング', 'sukureipingu', 2, 'ウェブデータ収集', array['scraping'])
-```
-
-### ゲーム機能での使い分け
-- **表示**: `display_text` を使用（プレイヤーには日本語表示）
-- **入力判定**: `romaji_text` でタイピング判定
-- **制約システム**: `romaji_text` ベースで制約適用
-
-### 影響範囲
-- **データベース**: 
-  - `/supabase/migrations/20250619_unified_schema.sql`
-  - `/supabase/seed.sql`
-- **型定義**: 
-  - `/frontend/lib/database.types.ts`
-- **ゲームロジック**:
-  - `/frontend/app/game/page.tsx`
-  - 制約システム関連ファイル（今後作成予定）
-
-## 移行手順 🔄
-
-1. スキーマ変更（ALTER TABLE）
-2. 既存データの移行（display_text = term, romaji_text = term の暫定設定）
-3. シードデータの更新
-4. TypeScript型定義の更新
-5. フロントエンドロジックの更新
-6. 制約システムの対応確認
-
-## 注意事項 ⚠️
-- 既存データの互換性を保つため、段階的に移行
-- ローマ字変換は手動で正確性を確保
-- インデックスの再作成が必要
-- Realtime機能への影響確認が必要
-
-## 完了判定基準 ✅
-- [ ] スキーマ変更完了
-- [ ] 既存データ移行完了
-- [ ] 新規サンプルデータ追加
-- [ ] TypeScript型定義更新
-- [ ] ゲーム画面での正常動作確認
-- [ ] タイピング判定の正常動作確認
+この計画で進めることで、リスクを最小化しながら段階的に最適化システムを構築できます！
