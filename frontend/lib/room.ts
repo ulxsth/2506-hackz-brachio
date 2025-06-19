@@ -214,20 +214,19 @@ export const startGame = async (params: {
       throw new Error('Only host can start the game')
     }
     
-    // ルーム状態をプレイ中に変更
-    debugLog('🔄 startGame: ルーム状態をplayingに変更開始', roomId)
-    const { error } = await supabase
-      .from('rooms')
-      .update({ status: 'playing' })
-      .eq('id', roomId)
+    // start_game_session RPCを呼び出し（ルーム状態変更とgame_sessions作成を同時実行）
+    debugLog('🎮 startGame: start_game_session RPC呼び出し開始', roomId)
+    const { data, error } = await supabase.rpc('start_game_session', {
+      p_room_id: roomId
+    })
     
     if (error) {
-      debugLog('❌ startGame: ルーム状態変更エラー', error)
+      debugLog('❌ startGame: start_game_session RPC エラー', error)
       throw error
     }
     
-    debugLog('✅ startGame: ルーム状態変更成功')
-    debugLog('🎉 startGame: ゲーム開始完了')
+    debugLog('✅ startGame: start_game_session RPC 成功', data)
+    debugLog('🎉 startGame: ゲーム開始完了（ルーム状態変更＋game_sessions作成）')
     return { success: true }
     
   } catch (error) {
@@ -256,20 +255,19 @@ export const forceEndGame = async (params: {
       throw new Error('Only host can force end the game')
     }
     
-    // ルーム状態を終了に変更
-    debugLog('🔄 forceEndGame: ルーム状態をfinishedに変更開始', roomId)
-    const { error } = await supabase
-      .from('rooms')
-      .update({ status: 'finished' })
-      .eq('id', roomId)
+    // end_game_session RPCを呼び出し（ルーム状態変更とgame_sessions終了を同時実行）
+    debugLog('🏁 forceEndGame: end_game_session RPC呼び出し開始', roomId)
+    const { data, error } = await supabase.rpc('end_game_session', {
+      p_room_id: roomId
+    })
     
     if (error) {
-      debugLog('❌ forceEndGame: ルーム状態変更エラー', error)
+      debugLog('❌ forceEndGame: end_game_session RPC エラー', error)
       throw error
     }
     
-    debugLog('✅ forceEndGame: ルーム状態変更成功')
-    debugLog('🎉 forceEndGame: ゲーム強制終了完了')
+    debugLog('✅ forceEndGame: end_game_session RPC 成功', data)
+    debugLog('🎉 forceEndGame: ゲーム強制終了完了（ルーム状態変更＋game_sessions終了）')
     return { success: true }
     
   } catch (error) {

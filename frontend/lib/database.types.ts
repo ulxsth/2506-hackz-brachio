@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
-          operationName?: string
-          variables?: Json
           extensions?: Json
+          operationName?: string
           query?: string
+          variables?: Json
         }
         Returns: Json
       }
@@ -315,6 +315,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      end_game_session: {
+        Args: { p_room_id: string }
+        Returns: Json
+      }
       get_server_time: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -357,9 +361,9 @@ export type Database = {
       }
       start_game_preparation: {
         Args: {
-          p_room_id: string
           p_countdown_duration?: number
           p_preparation_timeout?: number
+          p_room_id: string
         }
         Returns: Json
       }
@@ -369,11 +373,11 @@ export type Database = {
       }
       update_player_ready_state: {
         Args: {
-          p_network_ready?: boolean
           p_assets_loaded?: boolean
+          p_network_ready?: boolean
           p_ui_ready?: boolean
-          p_player_id: string
           p_latency_ms?: number
+          p_player_id: string
           p_room_id: string
         }
         Returns: Json

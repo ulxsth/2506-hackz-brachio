@@ -330,6 +330,7 @@ as $$
 declare
   room_record record;
   game_start timestamptz;
+  session_id uuid;
 begin
   -- ルーム情報取得
   select * into room_record from public.rooms where id = p_room_id;
@@ -338,6 +339,7 @@ begin
   end if;
 
   game_start := now();
+  session_id := gen_random_uuid();
 
   -- ルームのゲーム状態を更新
   update public.rooms 
@@ -350,10 +352,80 @@ begin
     updated_at = now()
   where id = p_room_id;
 
+  -- game_sessionsテーブルにレコードを作成
+  insert into public.game_sessions (
+    id,
+    room_id,
+    start_time,
+    status
+  ) values (
+    session_id,
+    p_room_id,
+    game_start,
+    'playing'
+  );
+
   return json_build_object(
     'success', true,
     'phase', 'playing',
-    'actual_start_time', game_start
+    'actual_start_time', game_start,
+    'session_id', session_id
+  );
+end;
+$$;
+
+-- 3.7 ゲーム終了関数
+create or replace function end_game_session(
+  p_room_id text
+)
+returns json
+language plpgsql
+as $$
+declare
+  room_record record;
+  session_record record;
+  game_end timestamptz;
+begin
+  -- ルーム情報取得
+  select * into room_record from public.rooms where id = p_room_id;
+  if not found then
+    raise exception 'Room not found: %', p_room_id;
+  end if;
+
+  game_end := now();
+
+  -- プレイング中のゲームセッションを取得
+  select * into session_record 
+  from public.game_sessions 
+  where room_id = p_room_id and status = 'playing'
+  order by start_time desc
+  limit 1;
+
+  if found then
+    -- game_sessionsテーブルを終了状態に更新
+    update public.game_sessions
+    set 
+      end_time = game_end,
+      status = 'finished'
+    where id = session_record.id;
+  end if;
+
+  -- ルームの状態を終了に変更
+  update public.rooms 
+  set 
+    game_state = room_record.game_state || jsonb_build_object(
+      'phase', 'finished',
+      'actual_end_time', game_end
+    ),
+    status = 'finished',
+    updated_at = now()
+  where id = p_room_id;
+
+  return json_build_object(
+    'success', true,
+    'phase', 'finished',
+    'actual_end_time', game_end,
+    'session_id', case when session_record.id is not null then session_record.id else null end
   );
 end;
 $$;
