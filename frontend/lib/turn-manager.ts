@@ -29,6 +29,9 @@ const LETTER_COEFFICIENTS: Record<string, number> = {
   'j': 6, 'q': 6, 'x': 7, 'z': 8
 }
 
+const RATIO_TYPING_TURN = 90 / 100
+const RATIO_CONSTRAINT_TURN = 1 - RATIO_TYPING_TURN
+
 /**
  * ターン管理システムのメインクラス
  */
@@ -46,8 +49,7 @@ export class TurnManager {
   async generateNextTurn(previousTurns: TurnData[] = []): Promise<TurnData> {
     this.currentSequence++
     
-    // 83%の確率で制約ターン、17%の確率で通常ターン
-    const isTypingTurn = Math.random() < 0.17
+    const isTypingTurn = Math.random() < RATIO_TYPING_TURN
     
     if (isTypingTurn) {
       return await this.generateTypingTurn()
