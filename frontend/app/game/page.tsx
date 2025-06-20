@@ -13,6 +13,7 @@ import type { Database } from '@/lib/database.types';
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
 
 interface Player {
+  id: string;
   name: string;
   score: number;
   rank: number;
@@ -52,10 +53,10 @@ export default function GamePageMVP() {
   
   // プレイヤー情報（モック）
   const [players, setPlayers] = useState<Player[]>([
-    { name: 'あなた', score: 0, rank: 1 },
-    { name: 'タイピング王', score: 120, rank: 2 },
-    { name: 'コード忍者', score: 95, rank: 3 },
-    { name: 'IT戦士', score: 80, rank: 4 }
+    { id: 'player-1', name: 'あなた', score: 0, rank: 1 },
+    { id: 'player-2', name: 'タイピング王', score: 120, rank: 2 },
+    { id: 'player-3', name: 'コード忍者', score: 95, rank: 3 },
+    { id: 'player-4', name: 'IT戦士', score: 80, rank: 4 }
   ]);
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -487,7 +488,7 @@ export default function GamePageMVP() {
               <div className="space-y-3">
                 {players.map((player, index) => (
                   <div
-                    key={player.name}
+                    key={player.id}
                     className={`flex items-center justify-between p-3 rounded-lg transition-all ${
                       player.name === 'あなた'
                         ? 'bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30'

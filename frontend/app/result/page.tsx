@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
 
 interface PlayerResult {
+  id: string;
   name: string;
   score: number;
   rank: number;
@@ -42,6 +43,7 @@ export default function ResultPage() {
         if (result.success && result.data) {
           // 型を変換（API結果→UI表示用）
           const convertedResults: PlayerResult[] = result.data.results.map((player: any) => ({
+            id: player.id,
             name: player.name,
             score: player.score,
             rank: player.rank,
@@ -65,6 +67,7 @@ export default function ResultPage() {
         // エラー時はダミーデータにフォールバック
         const fallbackResults: PlayerResult[] = [
           {
+            id: 'fallback-1',
             name: 'タイピング王',
             score: 1250,
             rank: 1,
@@ -73,6 +76,7 @@ export default function ResultPage() {
             accuracy: 94.2
           },
           {
+            id: 'fallback-2',
             name: 'あなた',
             score: 1180,
             rank: 2,
@@ -81,6 +85,7 @@ export default function ResultPage() {
             accuracy: 89.7
           },
           {
+            id: 'fallback-3',
             name: 'コード忍者',
             score: 980,
             rank: 3,
@@ -89,6 +94,7 @@ export default function ResultPage() {
             accuracy: 86.1
           },
           {
+            id: 'fallback-4',
             name: 'IT戦士',
             score: 820,
             rank: 4,
@@ -215,7 +221,7 @@ export default function ResultPage() {
           <div className="space-y-4">
             {results.map((player, index) => (
               <div
-                key={player.name}
+                key={player.id}
                 className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:shadow-md ${
                   player.name === 'あなた'
                     ? 'bg-blue-50 border-2 border-blue-300 shadow-md'
