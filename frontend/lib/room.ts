@@ -492,6 +492,13 @@ export const submitWord = async (params: {
   comboAtTime: number
   isValid: boolean
   constraintsMet: any[]
+  // デュアルターンシステム対応
+  turnType: 'typing' | 'constraint'
+  targetWord?: string        // 通常ターン用
+  constraintChar?: string    // 制約ターン用
+  typingStartTime?: Date
+  typingDurationMs?: number
+  speedCoefficient?: number
 }): Promise<{ success: boolean; error?: string }> => {
   try {
     debugLog('📝 submitWord: 単語提出開始', params)
@@ -505,7 +512,14 @@ export const submitWord = async (params: {
         score: params.score,
         combo_at_time: params.comboAtTime,
         constraints_met: params.constraintsMet,
-        is_valid: params.isValid
+        is_valid: params.isValid,
+        // デュアルターンシステム対応フィールド
+        turn_type: params.turnType,
+        target_word: params.targetWord || null,
+        constraint_char: params.constraintChar || null,
+        typing_start_time: params.typingStartTime?.toISOString() || null,
+        typing_duration_ms: params.typingDurationMs || null,
+        speed_coefficient: params.speedCoefficient || 1.0
       })
 
     if (error) {

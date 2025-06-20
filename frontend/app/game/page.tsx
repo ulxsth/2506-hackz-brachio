@@ -31,7 +31,7 @@ interface Player {
 export default function GamePageMVP() {
   const router = useRouter();
   const { user, currentRoom, forceEndGame } = useRoom();
-  const { startTimer, finishTimer, resetTimer } = useTypingTimer();
+  const { startTimer, finishTimer, resetTimer, startTime } = useTypingTimer();
   
   // ゲーム基本状態
   const [timeLeft, setTimeLeft] = useState(300); // 5分
@@ -188,6 +188,9 @@ export default function GamePageMVP() {
       // データベースに記録
       try {
         if (gameSessionId) {
+          // タイピング測定データを取得
+          const typingData = finishTimer();
+          
           await submitWord({
             gameSessionId,
             playerId: user.id,
@@ -198,7 +201,14 @@ export default function GamePageMVP() {
             constraintsMet: currentTurn.type === 'typing' ? [] : [{ 
               letter: currentTurn.constraintChar || '', 
               coefficient: currentTurn.coefficient 
-            }]
+            }],
+            // デュアルターンシステム対応
+            turnType: currentTurn.type,
+            targetWord: currentTurn.type === 'typing' ? currentTurn.targetWord : undefined,
+            constraintChar: currentTurn.type === 'constraint' ? currentTurn.constraintChar : undefined,
+            typingStartTime: startTime || undefined,
+            typingDurationMs: typingData.duration,
+            speedCoefficient: coefficient
           });
           
           await updatePlayerScore({
