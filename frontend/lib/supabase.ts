@@ -17,7 +17,6 @@ export type RoomPlayer = Tables<'room_players'>
 export type GameSession = Tables<'game_sessions'>
 export type WordSubmission = Tables<'word_submissions'>
 export type ItTerm = Tables<'it_terms'>
-export type Difficulty = Tables<'difficulties'>
 
 // Realtime Types - 型安全なリアルタイム通信用
 export interface RealtimeRoom extends Room {

@@ -24,8 +24,8 @@ export const createRoom = async (params: {
       .insert({
         id: roomId,
         host_id: currentUser.id,
-        settings,
-        status: 'waiting'
+        status: 'waiting',
+        settings: settings  // settingsフィールドに保存
       })
       .select()
       .single()

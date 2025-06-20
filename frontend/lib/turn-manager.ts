@@ -261,6 +261,9 @@ export class TurnManager {
   }
 }
 
+// デフォルトのTurnManagerインスタンス（テスト用）
+export const defaultTurnManager = new TurnManager('default')
+
 // 制約文字の係数を取得するヘルパー関数
 export const getConstraintCoefficient = (char: string): number => {
   return LETTER_COEFFICIENTS[char.toLowerCase()] || 1.0

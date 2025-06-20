@@ -114,6 +114,8 @@ export interface Database {
           room_code: string
           status: 'waiting' | 'playing' | 'finished'
           max_players: number
+          settings: Json
+          game_state: Json
           created_at: string
           updated_at: string
         }
@@ -123,6 +125,8 @@ export interface Database {
           room_code: string
           status?: 'waiting' | 'playing' | 'finished'
           max_players?: number
+          settings?: Json
+          game_state?: Json
           created_at?: string
           updated_at?: string
         }
@@ -132,6 +136,8 @@ export interface Database {
           room_code?: string
           status?: 'waiting' | 'playing' | 'finished'
           max_players?: number
+          settings?: Json
+          game_state?: Json
           created_at?: string
           updated_at?: string
         }
