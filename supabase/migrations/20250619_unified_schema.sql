@@ -8,6 +8,19 @@
 create extension if not exists "pg_trgm";
 
 -- =============================================
+-- 0. 既存テーブルの削除（安全に）
+-- =============================================
+
+-- 外部キー制約の関係で削除順序に注意
+drop table if exists public.word_submissions cascade;
+drop table if exists public.game_sessions cascade;
+drop table if exists public.room_players cascade;
+drop table if exists public.rooms cascade;
+drop table if exists public.it_terms cascade;
+drop table if exists public.difficulties cascade;
+drop table if exists public.player_ready_states cascade;
+
+-- =============================================
 -- 1. 基本テーブル作成
 -- =============================================
 
