@@ -1,31 +1,281 @@
-# 📋 試合終了後のユーザー結果集計・表示機能実装計画
+# 📋 デュアルターンシステム実装計画書
 
-## 🎯 要件
+## 🎯 概要
+通常のタイピングゲームのターン（単語を与え、それをタイピングする）と、制約から単語を与えるターン（制約を与え、それに沿った単語をこたえる）の両方をランダム（感覚的に 5:1 程度）に出すシステムの実装。
+
+## 📊 仕様サマリー
+- **通常ターン (83%)**: 提示されたIT用語を正確にタイピング
+- **制約ターン (17%)**: 指定文字を含むIT用語を考えて入力
+- **ターン切り替え**: 各回答後にランダム決定 (`Math.random() < 0.83`)
+- **得点計算の分離**: ターンタイプ別の異なる計算式
+
+---
+
+## 🗂️ 関連ファイルパス
+
+### フロントエンドコア
+- `frontend/app/game/page.tsx` - メインゲームロジック
+- `frontend/lib/room.ts` - ルーム管理・API処理
+- `frontend/hooks/useRoom.ts` - ルーム状態管理フック
+- `frontend/lib/game-sync.ts` - ゲーム同期システム
+- `frontend/hooks/useGameSync.ts` - ゲーム同期フック
+
+### データベース・スキーマ
+- `supabase/migrations/20250619_unified_schema.sql` - 現在のスキーマ
+- `frontend/lib/database.types.ts` - 型定義ファイル
+
+### 既存ゲームロジック
+- `frontend/lib/supabase.ts` - Supabase設定
+- `frontend/app/result/page.tsx` - 結果画面
+- `frontend/app/debug/test-data/page.tsx` - テストデータ生成
+
+### 辞書・データ管理
+- 現在：Supabaseクエリベース (`it_terms`テーブル)
+- 将来：高速化のための事前処理済み辞書ファイル
+
+---
+
+## 🛠️ 実装項目
+
+### Phase 1: データベース拡張 🗄️
+
+#### 1.1 game_sessions テーブル拡張
+```sql
+-- ターンシステム対応
+ALTER TABLE public.game_sessions 
+ADD COLUMN current_turn_type text check (current_turn_type in ('typing', 'constraint')) default 'constraint',
+ADD COLUMN current_target_word text, -- 通常ターン用の提示単語
+ADD COLUMN current_constraint_char char(1), -- 制約ターン用の指定文字
+ADD COLUMN turn_start_time timestamp with time zone,
+ADD COLUMN turn_sequence_number integer default 0;
+```
+
+#### 1.2 word_submissions テーブル拡張
+```sql
+-- ターン情報とタイミング記録
+ALTER TABLE public.word_submissions
+ADD COLUMN turn_type text check (turn_type in ('typing', 'constraint')) default 'constraint',
+ADD COLUMN target_word text, -- 通常ターン用（提示された単語）
+ADD COLUMN constraint_char char(1), -- 制約ターン用（指定文字）
+ADD COLUMN typing_start_time timestamp with time zone, -- タイピング開始時刻
+ADD COLUMN typing_duration_ms integer, -- タイピング時間（ミリ秒）
+ADD COLUMN speed_coefficient decimal default 1.0; -- タイピング速度係数
+```
+
+#### 1.3 インデックス追加
+```sql
+CREATE INDEX idx_game_sessions_turn_type ON public.game_sessions(current_turn_type);
+CREATE INDEX idx_word_submissions_turn_type ON public.word_submissions(turn_type);
+CREATE INDEX idx_word_submissions_target_word ON public.word_submissions(target_word);
+```
+
+### Phase 2: ゲームロジック拡張 🎮
+
+#### 2.1 ターン管理システム
+- **ファイル**: `frontend/lib/turn-manager.ts` (新規作成)
+- **機能**: ターンタイプ決定、単語選択、制約生成
+- **内容**:
+  ```typescript
+  export interface TurnData {
+    type: 'typing' | 'constraint'
+    targetWord?: string        // 通常ターン用
+    constraintChar?: string    // 制約ターン用
+    coefficient: number        // 得点係数
+    startTime: Date
+  }
+  
+  export class TurnManager {
+    generateNextTurn(previousTurns: TurnData[]): TurnData
+    selectRandomWord(): Promise<string>
+    generateConstraintChar(): { char: string; coefficient: number }
+    calculateSpeedCoefficient(duration: number): number
+  }
+  ```
+
+#### 2.2 得点計算システム更新
+- **ファイル**: `frontend/lib/scoring.ts` (修正)
+- **機能**: ターン別得点計算ロジック
+- **内容**:
+  ```typescript
+  interface ScoringParams {
+    turnType: 'typing' | 'constraint'
+    word: string
+    difficulty: number
+    coefficient: number // 速度係数 or 制約係数
+    combo: number
+  }
+  
+  export const calculateScore = (params: ScoringParams): number => {
+    const baseScore = params.word.length
+    
+    switch (params.turnType) {
+      case 'typing':
+        // 通常ターン: 単語文字数 × 難易度 × 速度係数 × コンボ
+        return baseScore * params.difficulty * params.coefficient * params.combo
+      case 'constraint':
+        // 制約ターン: 単語文字数 × 難易度 × 制約係数 × コンボ
+        return baseScore * params.difficulty * params.coefficient * params.combo
+    }
+  }
+  ```
+
+#### 2.3 タイピング測定システム
+- **ファイル**: `frontend/hooks/useTypingTimer.ts` (新規作成)
+- **機能**: タイピング開始時間記録、完了時間測定、速度係数計算
+- **内容**:
+  ```typescript
+  export const useTypingTimer = () => {
+    const [startTime, setStartTime] = useState<Date | null>(null)
+    
+    const startTimer = () => setStartTime(new Date())
+    const finishTimer = (): { duration: number; coefficient: number } => {
+      if (!startTime) return { duration: 0, coefficient: 1.0 }
+      
+      const duration = Date.now() - startTime.getTime()
+      const coefficient = calculateSpeedCoefficient(duration)
+      
+      return { duration, coefficient }
+    }
+  }
+  ```
+
+### Phase 3: UI・UX実装 🎨
+
+#### 3.1 ゲーム画面更新
+- **ファイル**: `frontend/app/game/page.tsx` (大幅修正)
+- **機能**: ターン別UI表示、入力処理分岐
+- **変更内容**:
+  ```typescript
+  // 現在のターン状態管理
+  const [currentTurn, setCurrentTurn] = useState<TurnData | null>(null)
+  
+  // ターン別UI表示
+  const renderTurnUI = () => {
+    if (!currentTurn) return null
+    
+    switch (currentTurn.type) {
+      case 'typing':
+        return <TypingTurnUI targetWord={currentTurn.targetWord} />
+      case 'constraint':
+        return <ConstraintTurnUI constraintChar={currentTurn.constraintChar} />
+    }
+  }
+  ```
+
+#### 3.2 ターン別UIコンポーネント
+- **ファイル**: `frontend/components/TypingTurnUI.tsx` (新規作成)
+- **機能**: 通常ターン専用UI（単語表示、タイピング入力）
+- **ファイル**: `frontend/components/ConstraintTurnUI.tsx` (新規作成)
+- **機能**: 制約ターン専用UI（制約表示、パスボタン）
+
+#### 3.3 フィードバック・結果表示更新
+- ターン別の成功・失敗メッセージ
+- 得点計算式の表示（透明性向上）
+- タイピング速度の可視化
+
+### Phase 4: データ同期・API拡張 🔄
+
+#### 4.1 ルーム状態管理拡張
+- **ファイル**: `frontend/lib/room.ts` (修正)
+- **機能**: ターンデータの同期、状態更新API
+- **新規API**:
+  ```typescript
+  export const startNewTurn = async (roomId: string, turnData: TurnData)
+  export const submitTurnResult = async (params: TurnSubmissionParams)
+  export const syncTurnState = async (roomId: string)
+  ```
+
+#### 4.2 リアルタイム同期拡張
+- **ファイル**: `frontend/lib/game-sync.ts` (修正)
+- **機能**: ターン切り替え通知、状態同期
+- **拡張内容**:
+  - ターン開始イベント
+  - プレイヤー回答完了通知
+  - 次ターン準備通知
+
+### Phase 5: 辞書・パフォーマンス最適化 ⚡
+
+#### 5.1 単語選択最適化
+- **対象**: 通常ターン用の単語選択
+- **方式**: 事前に選定された単語プールからランダム選択
+- **条件**: 
+  - 適切な難易度分布
+  - タイピング練習に適した長さ（3-15文字）
+  - よく知られたIT用語優先
+
+#### 5.2 制約チェック高速化
+- **対象**: 制約ターンの文字包含チェック
+- **方式**: 既存のSupabaseクエリ継続使用
+- **将来の最適化**: 文字インデックス事前構築
+
+---
+
+## ✅ テスト項目
+
+### 単体テスト
+- [ ] ターン生成ロジック（83%:17%の比率確認）
+- [ ] 得点計算（両ターンタイプ）
+- [ ] タイピング速度測定精度
+- [ ] 制約チェック正確性
+
+### 統合テスト
+- [ ] ターン切り替えフロー
+- [ ] マルチプレイヤー同期
+- [ ] データベース一貫性
+- [ ] リアルタイム通信
+
+### ユーザビリティテスト
+- [ ] UI切り替えのスムーズさ
+- [ ] 指示の明確性
+- [ ] フィードバックの適切性
+- [ ] パフォーマンス（レスポンス時間）
+
+---
+
+## 🚀 実装優先度
+
+### 🔥 Priority 1 (即座に実装)
+1. データベーススキーマ拡張
+2. ターン管理システム（基本機能）
+3. ゲーム画面のターン別表示切り替え
+
+### ⚡ Priority 2 (1週間以内)
+4. 得点計算システム更新
+5. タイピング測定システム
+6. API・データ同期拡張
+
+### 🎯 Priority 3 (安定化・最適化)
+7. UI・UXの洗練
+8. パフォーマンス最適化
+9. 包括的テスト実装
+
+---
+
+## 📋 結果集計・表示機能（既存項目）
+
+### 🎯 要件
 - 試合終了後にユーザーの結果をデータベースから集計する
 - 実際のプレイデータに基づいた結果を表示する機能を実装
 - 現在のダミーデータによる表示を実際のDBデータに置き換える
 
-## ✅ 前回完了項目（ホスト専用終了ボタン）
+### ✅ 前回完了項目（ホスト専用終了ボタン）
 - ✅ ホスト専用のゲーム終了ボタン実装完了
 - ✅ 強制終了機能・リアルタイム配信完了
 - ✅ 全員への結果画面遷移機能完了
 
-## 📁 関連ファイル
-
-### フロントエンド（結果集計・表示）
+### 📁 結果集計関連ファイル
 - `frontend/app/result/page.tsx` - 結果画面メイン（要修正：ダミーデータ→実データ）
 - `frontend/hooks/useRoom.ts` - ルーム管理フック（結果取得API追加）
 - `frontend/lib/room.ts` - ルーム操作API（結果集計API追加）
 - `frontend/lib/supabase.ts` - Supabase型定義（結果集計型追加）
 
-### バックエンド（データベース）
-- `supabase/migrations/20250619_unified_schema.sql` - データベーススキーマ（確認済）
-
 ### 利用するテーブル
 - `word_submissions` - 単語提出履歴（個人統計の基礎データ）
-- `room_players` - プレイヤー情報（スコア・コンボ）
+- `room_players` - プレイヤー情報（スコア・コンボ）  
 - `game_sessions` - ゲームセッション（ゲーム期間情報）
 - `rooms` - ルーム情報（設定・状態）
+
+---
 
 ## 🛠️ 実装項目
 
@@ -96,6 +346,17 @@
 7. 結果表示
 ```
 
+## 🔧 既存結果集計機能の実装項目
+
+### 5. 統計計算ロジックの実装 📈
+- **機能**: DBクエリでの統計計算
+- **内容**: 複雑な集計ロジックの実装
+- **詳細**:
+  - 正解率の計算（正解単語数 / 総提出数）
+  - 最高コンボの取得（word_submissionsの最大combo_at_time）
+  - 平均得点/単語の計算
+  - ランキング計算（同点の場合の順位ルール）
+
 ### 想定する集計クエリ例
 ```sql
 -- プレイヤー別統計の取得
@@ -125,66 +386,49 @@ ORDER BY rp.score DESC;
 - ✅ エラーハンドリングが適切に動作する
 - ✅ パフォーマンスが許容範囲内（<2秒）
 
-## 📝 テスト項目
+## 📝 統合テスト項目
 1. **基本機能テスト**
    - 複数プレイヤーでの結果表示
    - 個人統計の正確性（スコア、単語数、コンボ、正解率）
    - ランキングの正確性
 
-2. **エラーケーステスト**
+2. **ターンシステムテスト**
+   - 通常ターンと制約ターンの切り替え
+   - ターン別得点計算の正確性
+   - UI表示の適切性
+
+3. **エラーケーステスト**
    - 提出データなしの場合
    - ネットワークエラーの場合
    - 不正なルームIDの場合
 
-3. **パフォーマンステスト**
+4. **パフォーマンステスト**
    - 大量の単語提出データでの表示速度
    - 複数プレイヤーでの処理時間
 
-## 🚀 実装順序
-1. **Phase 1** - API層の実装（結果集計関数）
-2. **Phase 2** - 型定義・データ取得ロジック
-3. **Phase 3** - UI修正（ダミーデータ削除）
-4. **Phase 4** - エラーハンドリング・最適化
-5. **Phase 5** - テスト・デバッグ
+---
+
+## 🌟 今回のメイン目標
+
+### 最終目標
+デュアルターンシステム（通常タイピングターン + 制約ターン）を実装し、5:1の比率でランダム出題する完全に機能するマルチプレイヤーゲームシステムの構築。
+
+### 期待される成果
+1. **ユーザビリティ向上**: 2種類のゲームモードによる飽きにくいゲーム体験
+2. **スキル多様化**: タイピング速度と知識・思考力の両方を評価
+3. **システム拡張性**: 将来的な新ゲームモード追加の基盤構築
+4. **データ分析強化**: ターン別パフォーマンス分析機能
 
 ---
 
-## 📈 既存実装の活用ポイント
-- **DB設計**: word_submissions, room_players等の既存テーブル構造は適切
-- **型定義**: 既存のPlayerResult型は再利用可能
-- **UI/UX**: 現在の結果画面デザインは維持
-- **状態管理**: useRoomフックの拡張で対応
+## 📞 次のアクション
 
-## ⚠️ 注意事項
-- **データ整合性**: ゲーム終了時点でのデータの確定が重要
-- **リアルタイム性**: 全プレイヤーが同じ結果を見ることを保証
-- **エラー耐性**: ネットワーク・DBエラー時のフォールバック
-- **セキュリティ**: プレイヤーは自分が参加したゲームの結果のみ表示
+### すぐに実行可能
+1. **「実装」** - Phase 1のデータベース拡張から開始
+2. **「調査」** - 既存ゲームロジックの詳細分析・インパクト評価  
+3. **「デバッグ」** - 現在の制約ターン動作の検証・修正
 
----
-
-*この計画は前回のホスト専用終了ボタンの実装完了を受けて作成されています* ✅
-3. 強制終了の理由が分かる通知が表示される 💬
-
-## 🚀 次のアクション
-
-計画確認後、「実装」の指示で段階的な実装を開始します！
-
-#### 1.3 package.jsonスクリプト追加
-```json
-{
-  "scripts": {
-    "build:dictionary": "node scripts/build-dictionary.js",
-    "upload:dictionary": "node scripts/upload-to-storage.js",
-    "dict:update": "npm run build:dictionary && npm run upload:dictionary"
-  }
-}
-```
-
-### Step 2: データ構造設計
-
-#### 2.1 圧縮辞書ファイル構造
-```typescript
+どの方向で進めましょうか？ 🚀✨
 interface CompressedDictionary {
   metadata: {
     version: string;
