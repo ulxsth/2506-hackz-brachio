@@ -397,15 +397,15 @@ export default function GamePageMVP() {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
-      <div className="container mx-auto px-4 py-8">
+    <div>
+      <div>
         {/* ヘッダー */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+        <div>
+          <div>
+            <h1>
               🎮 デュアルターンゲーム
             </h1>
-            <div className="text-2xl font-mono text-cyan-400">
+            <div>
               {minutes}:{seconds.toString().padStart(2, '0')}
             </div>
           </div>
@@ -413,41 +413,40 @@ export default function GamePageMVP() {
           {isHost && (
             <button
               onClick={handleEndGame}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
             >
               🔚 ゲーム終了
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div>
           {/* メインゲーム画面 */}
-          <div className="lg:col-span-2">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+          <div>
+            <div>
               {/* ターン情報 */}
-              <div className="mb-6">
+              <div>
                 {currentTurn && (
-                  <div className="text-center">
+                  <div>
                     {currentTurn.type === 'typing' ? (
-                      <div className="text-2xl font-bold text-cyan-400 mb-2">
+                      <div>
                         📝 通常ターン #{currentTurn.sequenceNumber}
                       </div>
                     ) : (
-                      <div className="text-2xl font-bold text-orange-400 mb-2">
+                      <div>
                         🎯 制約ターン #{currentTurn.sequenceNumber}
                       </div>
                     )}
                     
                     {currentTurn.type === 'typing' && currentTurn.targetWord && (
-                      <div className="text-4xl font-mono text-white bg-gray-900 rounded-lg p-4 mb-4">
+                      <div>
                         {currentTurn.targetWord}
                       </div>
                     )}
                     
                     {currentTurn.type === 'constraint' && currentTurn.constraintChar && (
-                      <div className="text-lg text-gray-300 mb-4">
-                        「<span className="text-3xl font-bold text-orange-400">{currentTurn.constraintChar}</span>」を含むIT用語を入力
-                        <span className="text-sm text-gray-400 ml-2">(係数×{currentTurn.coefficient})</span>
+                      <div>
+                        「<span>{currentTurn.constraintChar}</span>」を含むIT用語を入力
+                        <span>(係数×{currentTurn.coefficient})</span>
                       </div>
                     )}
                   </div>
@@ -455,21 +454,19 @@ export default function GamePageMVP() {
               </div>
 
               {/* 入力フォーム */}
-              <form onSubmit={handleInputSubmit} className="mb-6">
-                <div className="flex space-x-2">
+              <form onSubmit={handleInputSubmit}>
+                <div>
                   <input
                     ref={inputRef}
                     type="text"
                     value={currentInput}
                     onChange={(e) => setCurrentInput(e.target.value)}
                     onFocus={() => startTimer()}
-                    className="flex-1 px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
                     placeholder="単語を入力してください..."
                     autoComplete="off"
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 rounded-lg font-medium transition-all"
                   >
                     送信
                   </button>
@@ -477,11 +474,6 @@ export default function GamePageMVP() {
                     type="button"
                     onClick={handlePass}
                     disabled={!canPass}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      canPass 
-                        ? 'bg-yellow-600 hover:bg-yellow-700' 
-                        : 'bg-gray-600 cursor-not-allowed'
-                    }`}
                   >
                     {passCountdown > 0 ? `${passCountdown}s` : 'パス'}
                   </button>
@@ -490,39 +482,38 @@ export default function GamePageMVP() {
 
               {/* フィードバック */}
               {feedback && (
-                <div className="mb-6 p-4 bg-gray-900 rounded-lg text-center">
-                  <div className="text-lg">{feedback}</div>
+                <div>
+                  <div>{feedback}</div>
                 </div>
               )}
 
               {/* 統計情報 */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="text-center p-3 bg-gray-900 rounded-lg">
-                  <div className="text-2xl font-bold text-cyan-400">{myScore}</div>
-                  <div className="text-sm text-gray-400">スコア</div>
+              <div>
+                <div>
+                  <div>{myScore}</div>
+                  <div>スコア</div>
                 </div>
-                <div className="text-center p-3 bg-gray-900 rounded-lg">
-                  <div className="text-2xl font-bold text-green-400">{combo}</div>
-                  <div className="text-sm text-gray-400">コンボ</div>
+                <div>
+                  <div>{combo}</div>
+                  <div>コンボ</div>
                 </div>
-                <div className="text-center p-3 bg-gray-900 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-400">{maxCombo}</div>
-                  <div className="text-sm text-gray-400">最大コンボ</div>
+                <div>
+                  <div>{maxCombo}</div>
+                  <div>最大コンボ</div>
                 </div>
-                <div className="text-center p-3 bg-gray-900 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-400">#{myRank}</div>
-                  <div className="text-sm text-gray-400">順位</div>
+                <div>
+                  <div>#{myRank}</div>
+                  <div>順位</div>
                 </div>
               </div>
 
               {/* 入力履歴 */}
-              <div className="bg-gray-900 rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-3 text-gray-300">📜 入力履歴</h3>
-                <div className="flex flex-wrap gap-2">
+              <div>
+                <h3>📜 入力履歴</h3>
+                <div>
                   {words.map((word, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-cyan-600 text-white rounded-full text-sm"
                     >
                       {word}
                     </span>
@@ -533,55 +524,45 @@ export default function GamePageMVP() {
           </div>
 
           {/* サイドバー */}
-          <div className="space-y-6">
+          <div>
             {/* リーダーボード */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-              <h3 className="text-xl font-bold mb-4 text-center">🏆 リーダーボード</h3>
-              <div className="space-y-3">
+            <div>
+              <h3>🏆 リーダーボード</h3>
+              <div>
                 {players.map((player, index) => (
                   <div
                     key={player.id}
-                    className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-                      player.name === 'あなた'
-                        ? 'bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30'
-                        : 'bg-gray-900/50'
-                    }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-yellow-500 text-black' :
-                        index === 1 ? 'bg-gray-400 text-black' :
-                        index === 2 ? 'bg-amber-600 text-white' :
-                        'bg-gray-600 text-white'
-                      }`}>
+                    <div>
+                      <div>
                         {player.rank}
                       </div>
-                      <span className="font-medium">{player.name}</span>
+                      <span>{player.name}</span>
                     </div>
-                    <span className="font-bold text-cyan-400">{player.score}</span>
+                    <span>{player.score}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* ゲーム情報 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-              <h3 className="text-xl font-bold mb-4 text-center">ℹ️ ゲーム情報</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">ルーム:</span>
+            <div>
+              <h3>ℹ️ ゲーム情報</h3>
+              <div>
+                <div>
+                  <span>ルーム:</span>
                   <span>{currentRoom?.id?.slice(-6) || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">プレイヤー:</span>
+                <div>
+                  <span>プレイヤー:</span>
                   <span>{user?.name || user?.id?.slice(-6) || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">辞書:</span>
+                <div>
+                  <span>辞書:</span>
                   <span>{itTerms.length}件</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">ターン:</span>
+                <div>
+                  <span>ターン:</span>
                   <span>{currentTurn?.sequenceNumber || 0}</span>
                 </div>
               </div>
