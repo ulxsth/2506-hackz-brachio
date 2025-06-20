@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useRoom } from '@/hooks/useRoom';
-import { submitWord, updatePlayerScore } from '@/lib/room';
+import { submitWord, updatePlayerScore, startGame } from '@/lib/room';
 import { TurnManager, type TurnData } from '@/lib/turn-manager';
 import { calculateScore } from '@/lib/scoring';
 import { useTypingTimer } from '@/hooks/useTypingTimer';
@@ -63,12 +63,45 @@ export default function GamePageMVP() {
 
   // ルーム情報とターンマネージャー初期化
   useEffect(() => {
-    if (currentRoom?.id) {
-      const manager = new TurnManager(currentRoom.id);
-      setTurnManager(manager);
-      console.log('🎮 ターンマネージャー初期化完了');
-    }
-  }, [currentRoom?.id]);
+    const initializeGame = async () => {
+      if (currentRoom?.id && user?.id) {
+        try {
+          console.log('🎮 ゲーム初期化開始', { roomId: currentRoom.id, userId: user.id });
+          
+          // ゲームセッション開始
+          if (currentRoom.host_id === user.id) {
+            console.log('👑 ホストとしてゲーム開始処理を実行');
+            const result = await startGame({
+              userId: user.id,
+              roomId: currentRoom.id,
+              hostId: currentRoom.host_id
+            });
+            
+            if (result.success && result.data?.session_id) {
+              console.log('✅ ゲームセッション開始成功', result.data);
+              setGameSessionId(result.data.session_id);
+            } else {
+              console.error('❌ ゲームセッション開始失敗', result.error);
+            }
+          } else {
+            console.log('👤 非ホストプレイヤー：ゲーム開始を待機中');
+            // 非ホストの場合は、ルーム状態変更を監視してセッションIDを取得
+            // TODO: リアルタイム更新でセッションIDを取得
+          }
+          
+          // ターンマネージャー初期化
+          const manager = new TurnManager(currentRoom.id);
+          setTurnManager(manager);
+          console.log('🎮 ターンマネージャー初期化完了');
+          
+        } catch (error) {
+          console.error('💥 ゲーム初期化エラー', error);
+        }
+      }
+    };
+    
+    initializeGame();
+  }, [currentRoom?.id, user?.id]);
 
   // IT用語辞書の読み込み
   useEffect(() => {
@@ -187,10 +220,14 @@ export default function GamePageMVP() {
       
       // データベースに記録
       try {
+        console.log('🔍 DB記録処理開始:', { gameSessionId, userId: user?.id });
+        
         if (gameSessionId) {
           // タイピング測定データを取得
           const typingData = finishTimer();
+          console.log('📊 タイピングデータ取得:', typingData);
           
+          console.log('📝 submitWord呼び出し開始');
           await submitWord({
             gameSessionId,
             playerId: user.id,
@@ -210,13 +247,18 @@ export default function GamePageMVP() {
             typingDurationMs: typingData.duration,
             speedCoefficient: coefficient
           });
+          console.log('✅ submitWord呼び出し完了');
           
+          console.log('🎯 updatePlayerScore呼び出し開始');
           await updatePlayerScore({
             playerId: user.id,
             roomId: currentRoom.id,
             scoreToAdd: points,
             newCombo: newCombo
           });
+          console.log('✅ updatePlayerScore呼び出し完了');
+        } else {
+          console.log('⚠️ gameSessionId がnullのため、DB記録をスキップ');
         }
         
         console.log('✅ DB更新成功:', { word, points, newCombo });

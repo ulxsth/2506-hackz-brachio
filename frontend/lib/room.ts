@@ -227,7 +227,7 @@ export const startGame = async (params: {
     
     debugLog('✅ startGame: start_game_session RPC 成功', data)
     debugLog('🎉 startGame: ゲーム開始完了（ルーム状態変更＋game_sessions作成）')
-    return { success: true }
+    return { success: true, data: data }
     
   } catch (error) {
     debugLog('💥 startGame: エラー発生', error)
