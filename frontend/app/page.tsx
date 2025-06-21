@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/supabase-atoms';
 import { debugLog } from '@/lib/logger';
+import { Button, Input } from '../components/ui';
 
 export default function Home() {
   const [nickname, setNickname] = useState('');
@@ -94,25 +95,26 @@ export default function Home() {
         <span className="text-terminalText">$</span>
         <span className="text-terminalText">register --nickname</span>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 pl-6 border-l-2 border-terminalBorder">
-        <label htmlFor="nickname" className="text-sm font-semibold mb-1">ニックネーム</label>
-        <input
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 pl-6 border-l-2 border-terminalBorder">
+        <Input
+          label="ニックネーム"
           type="text"
           id="nickname"
           value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNickname(e.target.value)}
           placeholder="ニックネームを入力してください"
           maxLength={15}
-          className="bg-transparent outline-none text-terminalText placeholder-terminalAccent px-2 py-1 border-b border-terminalBorder"
+          error={error}
           autoFocus
         />
-        <div className="flex justify-between text-xs mt-1">
-          <span className="text-error">{error}</span>
+        <div className="text-xs text-right">
           <span className="text-terminalAccent">{nickname.length}/15</span>
         </div>
-        <button type="submit" className="bg-terminalAccent text-terminalBg font-bold px-3 py-1 rounded hover:bg-green-500 transition self-end mt-2">
-          入場
-        </button>
+        <div className="flex justify-end">
+          <Button type="submit" variant="primary">
+            入場
+          </Button>
+        </div>
       </form>
       <div className="mt-4 text-xs text-terminalAccent text-right">
         <a href="#" className="underline">利用規約</a>

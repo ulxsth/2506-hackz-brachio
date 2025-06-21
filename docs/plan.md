@@ -176,3 +176,73 @@
 
 # この計画に従い、実装フェーズで具体的なコード修正を行う
 
+# ターミナルUIコンポーネント最小限セット 実装計画
+
+## 目的
+- 文字だけのターミナルUIからUX向上のため、最小限のコンポーネントを作成
+- ターミナル風デザインを保ちつつ、ボタン・フォーム要素などの操作性を向上
+- 統一感のあるデザインシステムを構築
+
+---
+
+## 関連ファイル
+- frontend/components/ui/（新規ディレクトリ）
+  - Button.tsx（ボタンコンポーネント）
+  - Input.tsx（入力フィールド）
+  - Select.tsx（セレクトボックス）
+  - TextArea.tsx（テキストエリア）
+  - Card.tsx（カード・パネル）
+  - Modal.tsx（モーダル・ダイアログ）
+- frontend/tailwind.config.js（コンポーネント用カスタムクラス追加）
+- frontend/app/globals.css（共通スタイル拡張）
+
+---
+
+## 実装方針
+### 1. コンポーネント設計思想
+- ターミナル風デザインを維持（角ばった境界線、monospaceフォント、緑系色調）
+- hovrer/focus/activeステートでのフィードバック
+- サイズバリエーション（sm/md/lg）とカラーバリエーション（primary/secondary/danger/success）
+
+### 2. 作成コンポーネント
+#### Button.tsx
+- variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+- size: 'sm' | 'md' | 'lg'
+- ターミナル風角ばったデザイン、hover時の境界線強調
+
+#### Input.tsx
+- type: 'text' | 'password' | 'email' | 'number'
+- ターミナル風境界線、フォーカス時の色変化
+- エラーステート対応
+
+#### Select.tsx / TextArea.tsx
+- 同様のターミナル風デザインで統一
+
+#### Card.tsx
+- 情報表示用パネル、ターミナルウィンドウ風
+- ヘッダー・ボディ・フッター構造
+
+#### Modal.tsx
+- オーバーレイ付きモーダル、ターミナルウィンドウデザイン
+
+### 3. 既存ページへの適用
+- frontend/app/page.tsx（ルートページ）でのボタン・フォーム要素置き換え
+- frontend/app/menu/, frontend/app/room/ 等での活用
+
+---
+
+## 注意点
+- ターミナル風デザインの一貫性維持
+- アクセシビリティ（aria-label, keyboard navigation等）
+- レスポンシブ対応
+
+---
+
+## 参考
+- 既存のtailwind.config.js（terminalBg, terminalText等のカラーパレット）
+- 現在のターミナルUIデザイン
+
+---
+
+# この計画に従い、実装フェーズで具体的なコンポーネント作成を行う
+

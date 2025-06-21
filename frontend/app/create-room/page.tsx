@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
+import { Button, Input, Select, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui';
 
 export default function CreateRoomPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -67,119 +68,119 @@ export default function CreateRoomPage() {
   };
 
   return (
-    <div>
-      <div>
-        <div>
-          <div>
-            <span>🏗️</span>
-          </div>
-          <h1>ルームを作成</h1>
-          <p>新しいゲームルームを作成します</p>
-        </div>
+    <div className="max-w-2xl mx-auto p-4 space-y-6">
+      {/* ヘッダー */}
+      <Card>
+        <CardHeader className="text-center">
+          <div className="text-4xl mb-2">🏗️</div>
+          <CardTitle>ルームを作成</CardTitle>
+          <CardDescription>
+            新しいゲームルームを作成します
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-        {(error || globalError) && (
-          <div>
-            <div>
-              <div>
-                <span>⚠️</span>
-              </div>
-              <div>
-                <p>{error || globalError}</p>
-              </div>
+      {/* エラー表示 */}
+      {(error || globalError) && (
+        <Card className="border-red-500">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-red-500">
+              <span>⚠️</span>
+              <p className="font-mono text-sm">{error || globalError}</p>
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
+      {/* フォーム */}
+      <Card>
         <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="roomCode">
-              あいことば <span>*</span>
-            </label>
-            <input
+          <CardContent className="space-y-6 pt-6">
+            {/* あいことば */}
+            <Input
+              label="あいことば *"
               type="text"
               id="roomCode"
               value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRoomCode(e.target.value)}
               placeholder="例: hoge123"
               maxLength={30}
               required
             />
-            <p>参加者がルームに入るためのパスワードです（1-30文字）</p>
-          </div>
+            <p className="text-xs font-mono text-terminalText opacity-70 -mt-4">
+              参加者がルームに入るためのパスワードです（1-30文字）
+            </p>
 
-          <div>
-            <div>
-              <label htmlFor="timeLimit">
-                制限時間（分）
-              </label>
-              <select
+            {/* 設定 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Select
+                label="制限時間（分）"
                 id="timeLimit"
-                value={timeLimit}
-                onChange={(e) => setTimeLimit(Number(e.target.value))}
+                value={timeLimit.toString()}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTimeLimit(Number(e.target.value))}
               >
                 <option value={3}>3分</option>
                 <option value={5}>5分</option>
                 <option value={10}>10分</option>
                 <option value={15}>15分</option>
-              </select>
-            </div>
+              </Select>
 
-            <div>
-              <label htmlFor="maxPlayers">
-                最大人数
-              </label>
-              <input
+              <Input
+                label="最大人数"
                 type="number"
                 id="maxPlayers"
-                value={maxPlayers}
-                onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                value={maxPlayers.toString()}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxPlayers(Number(e.target.value))}
                 min="2"
                 max="100"
                 placeholder="2-100人"
               />
-              <p>2人以上100人以下で設定してください</p>
             </div>
-          </div>
+            <p className="text-xs font-mono text-terminalText opacity-70 -mt-2">
+              2人以上100人以下で設定してください
+            </p>
 
-          <div>
-            <h3>設定内容</h3>
-            <div>
-              <p>• あいことば: <span>{roomCode || '未設定'}</span></p>
-              <p>• 制限時間: {timeLimit}分</p>
-              <p>• 最大人数: {maxPlayers}人</p>
-            </div>
-          </div>
+            {/* 設定内容確認 */}
+            <Card className="bg-terminalBorder bg-opacity-10">
+              <CardHeader>
+                <CardTitle className="text-base">設定内容</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-1 font-mono text-sm">
+                  <p>• あいことば: <span className="text-terminalAccent">{roomCode || '未設定'}</span></p>
+                  <p>• 制限時間: <span className="text-terminalAccent">{timeLimit}分</span></p>
+                  <p>• 最大人数: <span className="text-terminalAccent">{maxPlayers}人</span></p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div>
-            <button
+            {/* 接続状態 */}
+            {connectionState === 'connecting' && (
+              <div className="text-center font-mono text-sm text-terminalAccent">
+                Supabaseに接続中...
+              </div>
+            )}
+          </CardContent>
+
+          <CardFooter className="flex gap-3 justify-end">
+            <Button
               type="button"
+              variant="outline"
               onClick={handleBack}
               disabled={isCreating}
             >
               戻る
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={isCreating}
             >
-              {isCreating ? (
-                <div>
-                  <div></div>
-                  作成中...
-                </div>
-              ) : (
-                'ルーム作成'
-              )}
-            </button>
-          </div>
-
-          {connectionState === 'connecting' && (
-            <div>
-              Supabaseに接続中...
-            </div>
-          )}
+              {isCreating ? '作成中...' : 'ルーム作成'}
+            </Button>
+          </CardFooter>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }
