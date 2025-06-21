@@ -509,20 +509,15 @@ export default function GamePageMVP() {
                     }
                     showPreview={true}
                     showSuggestions={currentTurn?.type === 'constraint'}
-                    className="mb-4"
                   />
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
+                  <div>
+                    <button type="submit">
                       送信
                     </button>
                     <button
                       type="button"
                       onClick={handlePass}
                       disabled={!canPass}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
                     >
                       {passCountdown > 0 ? `${passCountdown}s` : 'パス'}
                     </button>
