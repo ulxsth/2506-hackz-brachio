@@ -103,3 +103,42 @@
 - **制約ターン**: 「'{constraint_char}'を含むIT用語を入力してください」
 - **パスボタン**: 制約ターンでのみ表示・有効
 
+---
+
+# layout.tsxのClient Component分離によるre-resizable対応 実装計画
+
+## 目的
+- re-resizableを使ったウィンドウ可変化をNext.jsのServer Components構成で正しく動作させる
+- Server Componentでエラーとなる部分をClient Componentに分離し、UI/UXを維持
+
+---
+
+## 関連ファイル
+- frontend/app/layout.tsx（全体レイアウト、Server Component）
+- frontend/components/TerminalWindow.tsx（新規作成、Client Componentとして分離）
+- frontend/components/Resizable.tsx（re-resizableラッパー）
+
+---
+
+## 実装方針
+1. `frontend/components/TerminalWindow.tsx`を新規作成し、`"use client"`で開始
+   - Resizableでラップしたウィンドウ本体・ヘッダー・children描画をこの中に移動
+   - propsでchildrenを受け取る
+2. `layout.tsx`はServer Componentのまま、`TerminalWindow`をimportしてchildrenを渡す
+3. 必要に応じてスタイル・propsを調整
+
+---
+
+## メリット
+- Server/Clientの責務分離が明確になり、Next.jsの設計に沿った構成となる
+- 今後のUI拡張やSSR対応も容易
+
+---
+
+## 参考
+- docs/reports/20250621_next-dynamic-ssr-false-server-components.md
+
+---
+
+# この計画に従い、実装フェーズで具体的なコード修正を行う
+

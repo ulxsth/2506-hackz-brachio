@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { JotaiProvider } from "../components/jotai-provider";
+import dynamic from "next/dynamic";
+import TerminalWindow from "../components/TerminalWindow";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,21 +30,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} w-screen h-screen flex items-center justify-center bg-terminalBg`}>
         <JotaiProvider>
           <div className="w-screen h-screen flex items-center justify-center bg-terminalBg">
-            <div className= "bg-terminalBg text-terminalText font-mono rounded-lg shadow-lg border border-terminalBorder w-full max-w-2xl h-[90vh] flex flex-col p-0">
-              {/* ウィンドウヘッダー */}
-              <div className="flex items-center justify-between bg-terminalBorder bg-opacity-30 px-3 py-1 rounded-t-lg border-b border-terminalBorder select-none">
-                <span className="text-xs font-bold tracking-widest"></span>
-                <div className="flex gap-2">
-                  <span className="w-7 h-7 rounded hover:bg-terminalBorder flex items-center justify-center text-lg text-white cursor-pointer transition" title="最小化">_</span>
-                  <span className="w-7 h-7 rounded hover:bg-terminalBorder flex items-center justify-center text-lg text-white cursor-pointer transition" title="ウィンドウ">□</span>
-                  <span className="w-7 h-7 rounded hover:bg-terminalBorder flex items-center justify-center text-lg text-white cursor-pointer transition" title="閉じる">×</span>
-                </div>
-              </div>
-              {/* 一枚板のターミナル内容 */}
-              <div className="flex-1 overflow-y-auto p-4 hide-horizonal-scrollbar">
-                {children}
-              </div>
-            </div>
+            <TerminalWindow>{children}</TerminalWindow>
           </div>
         </JotaiProvider>
       </body>
