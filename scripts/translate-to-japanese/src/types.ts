@@ -115,6 +115,10 @@ export interface TranslationConfig {
   testLimit: number;
   // 認知度評価設定
   difficultyEvaluationEnabled: boolean;
+  // 最適化設定
+  skipExisting: boolean;        // 既存データスキップ
+  enableResume: boolean;        // 中断復旧機能
+  autoSaveInterval: number;     // 自動保存間隔（件数）
 }
 
 /**
@@ -150,4 +154,18 @@ export interface TranslationWarning {
   originalLength: number;
   adjustedLength: number;
   timestamp: string;
+}
+
+/**
+ * 進行状況の保存・復旧用データ構造
+ */
+export interface ProcessProgress {
+  lastProcessedIndex: number;
+  lastProcessedName: string;
+  timestamp: string;
+  totalCount: number;
+  processedCount: number;
+  successCount: number;
+  errorCount: number;
+  currentBatch: number;
 }

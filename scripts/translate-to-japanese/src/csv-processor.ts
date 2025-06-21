@@ -230,4 +230,82 @@ export class CsvProcessor {
 
     return { valid, invalid };
   }
+
+  /**
+   * 既存の出力CSVファイルを読み込み、処理済みデータのMapを返す
+   */
+  async readExistingOutput(): Promise<Map<string, TranslatedLanguage>> {
+    const outputPath = path.join(this.outputDir, 'programming-languages-ja.csv');
+    const existingMap = new Map<string, TranslatedLanguage>();
+
+    // ファイルが存在しない場合は空のMapを返す
+    if (!fs.existsSync(outputPath)) {
+      console.log(`📄 既存の出力ファイルが見つかりません: ${outputPath}`);
+      return existingMap;
+    }
+
+    return new Promise((resolve, reject) => {
+      console.log(`📄 既存出力ファイルを読み込み中: ${outputPath}`);
+      let count = 0;
+
+      fs.createReadStream(outputPath)
+        .pipe(csv())
+        .on('data', (row: any) => {
+          try {
+            const translatedLanguage: TranslatedLanguage = {
+              name: row.name || '',
+              wikipediaTitle: row.wikipediaTitle || '',
+              summary: row.summary || '',
+              japaneseSummary: row.japaneseSummary || '',
+              difficulty: row.difficulty ? parseInt(row.difficulty) : undefined,
+              categories: row.categories || '',
+              year: row.year ? parseInt(row.year) : null
+            };
+            
+            // 必須データが揃っている場合のみマップに追加
+            if (translatedLanguage.name && translatedLanguage.japaneseSummary) {
+              existingMap.set(translatedLanguage.name, translatedLanguage);
+              count++;
+            }
+          } catch (error) {
+            console.warn(`⚠️  既存データの解析エラー (行をスキップ): ${row.name}`, error);
+          }
+        })
+        .on('end', () => {
+          console.log(`✅ 既存データ読み込み完了: ${count}件の処理済みデータ`);
+          resolve(existingMap);
+        })
+        .on('error', (error: any) => {
+          console.error('❌ 既存データ読み込みエラー:', error);
+          reject(error);
+        });
+    });
+  }
+
+  /**
+   * 入力データから未処理の言語のみをフィルタリング
+   */
+  filterUnprocessedLanguages(
+    inputLanguages: ProgrammingLanguage[], 
+    existingMap: Map<string, TranslatedLanguage>
+  ): ProgrammingLanguage[] {
+    const unprocessed = inputLanguages.filter(lang => !existingMap.has(lang.name));
+    
+    console.log(`🔍 差分検出結果:`);
+    console.log(`   📊 入力総数: ${inputLanguages.length}件`);
+    console.log(`   ✅ 処理済み: ${existingMap.size}件`);
+    console.log(`   🔄 未処理: ${unprocessed.length}件`);
+    
+    if (unprocessed.length > 0) {
+      console.log(`📝 未処理の言語（最初の5件）:`);
+      unprocessed.slice(0, 5).forEach((lang, index) => {
+        console.log(`   ${index + 1}. ${lang.name}`);
+      });
+      if (unprocessed.length > 5) {
+        console.log(`   ... その他 ${unprocessed.length - 5}件`);
+      }
+    }
+
+    return unprocessed;
+  }
 }
