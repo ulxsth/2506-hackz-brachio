@@ -50,19 +50,15 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <span className="text-terminalAccent">guest@trashcan</span>
           <span className="text-terminalText">$</span>
-          <span className="text-terminalText">figlet -f larry3d "TYPE 2 LIVE"</span>
+          <span className="text-terminalText">figlet -f smslant "TYPE 2 LIVE"</span>
         </div>
         <div>
-          <pre className="text-green-400 font-mono text-lg leading-tight mt-2 whitespace-pre">
-{`
-  _______  _______  _______  _______    _______  ___      ___   __   __  _______
- |       ||       ||       ||       |  |       ||   |    |   | |  | |  ||       |
- |    ___||   _   ||    ___||  _____|  |    ___||   |    |   | |  |_|  ||    ___|
- |   | __ |  | |  ||   |___ | |_____   |   |___ |   |    |   | |       ||   |___
- |   ||  ||  |_|  ||    ___||_____  |  |    ___||   |___ |   | |       ||    ___|
- |   |_| ||       ||   |___  _____| |  |   |___ |       ||   | |   _   ||   |___
- |_______||_______||_______||_______|  |_______||_______||___| |__| |__||_______|
-`}
+          <pre className="text-green-400 font-mono text-[15px] leading-tight tracking-tight whitespace-pre overflow-x-auto min-w-max bg-transparent p-0 m-0"
+            style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
+{` ________  _____  ____  ___    __   _____   ______
+/_  __/\\ \\/ / _ \\/ __/ |_  |  / /  /  _/ | / / __/
+ / /    \\  / ___/ _/  / __/  / /___/ / | |/ / _/  
+/_/     /_/_/  /___/ /____/ /____/___/ |___/___/  `}
           </pre>
         </div>
       </div>
