@@ -61,8 +61,6 @@ interface Player {
  * - タイピング速度測定: WPM/精度追跡
  */
 export default function GamePageMVP() {
-  console.log('🎮 GamePageMVP コンポーネント初期化開始');
-
   const router = useRouter();
   const { user, currentRoom, forceEndGame } = useRoom();
   const { startTimer, finishTimer, resetTimer, startTime } = useTypingTimer();
