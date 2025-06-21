@@ -1,53 +1,234 @@
-# プログラミング言語データ収集スクリプト計画
+# 📋 Gemini API日本語要約システム実装計画
 
-## 📋 プロジェクト概要
-Wikipedia「List of programming languages」ページからプログラミング言語の名称と説明文（上位3文）を自動収集するスクリプトの実装計画
+## 🎯 プロジェクト概要
+既存のプログラミング言語データ（programming-languages.csv）から英語のsummaryを読み取り、Gemini APIを使用して30文字以内の日本語要約を生成するスクリプトの実装計画
 
-## 🎯 目標
-- プログラミング言語名の網羅的収集
-- 各言語の簡潔な説明文取得
-- ゲーム用語辞書への活用
-- 自動更新可能な仕組みの構築
+## 📊 要求仕様
+- **入力データ**: `/scripts/scrape-programming-languages/output/programming-languages.csv`
+- **対象フィールド**: `summary`カラムの英語文
+- **出力**: 30文字以内の日本語要約
+- **データ件数**: 約612件のプログラミング言語
+- **実装言語**: TypeScript
+- **処理方式**: メモリ効率を考慮したバッチ処理
 
 ---
 
-## 🔍 技術アプローチ
+## 🔍 関連ファイルパス調査
 
-### Phase 1: リストページの解析
-1. **メインページ取得**
-   - URL: `https://en.wikipedia.org/wiki/List_of_programming_languages`
-   - HTMLパースによるプログラミング言語リストの抽出
-   - 言語名とWikipediaリンクの収集
+### 既存スクレイピングスクリプト
+- `/scripts/scrape-programming-languages/package.json` - Node.js依存関係
+- `/scripts/scrape-programming-languages/src/types.ts` - データ型定義
+- `/scripts/scrape-programming-languages/src/scraper.ts` - メインロジック
+- `/scripts/scrape-programming-languages/src/output-manager.ts` - ファイル出力管理
+- `/scripts/scrape-programming-languages/output/programming-languages.csv` - 入力データソース
 
-2. **データ構造の設計**
-   ```typescript
-   interface ProgrammingLanguage {
-     name: string;           // 言語名（例: "JavaScript"）
-     wikipediaTitle: string; // Wikipediaページタイトル
-     summary: string;        // 3文程度の要約
-     categories?: string[];  // カテゴリ（汎用、関数型等）
-     year?: number;         // 登場年
-   }
-   ```
+### 新規作成予定ファイル
+- `/scripts/translate-to-japanese/` - 新規ディレクトリ
+- `/scripts/translate-to-japanese/package.json` - 依存関係
+- `/scripts/translate-to-japanese/src/types.ts` - 型定義
+- `/scripts/translate-to-japanese/src/gemini-client.ts` - Gemini API クライアント
+- `/scripts/translate-to-japanese/src/csv-processor.ts` - CSV読み込み・処理
+- `/scripts/translate-to-japanese/src/batch-processor.ts` - バッチ処理エンジン
+- `/scripts/translate-to-japanese/src/output-manager.ts` - 結果出力管理
+- `/scripts/translate-to-japanese/src/index.ts` - メインエントリーポイント
+- `/scripts/translate-to-japanese/output/` - 出力フォルダ
 
-### Phase 2: 個別言語情報の取得
-1. **Wikipedia REST API活用**
-   - エンドポイント: `https://en.wikipedia.org/api/rest_v1/page/summary/{title}`
-   - 各言語ページから構造化データを取得
-   - 要約（extract）から最初の3文を抽出
+### 出力ファイル
+- `/scripts/translate-to-japanese/output/programming-languages-ja.csv` - 日本語要約追加版
+- `/scripts/translate-to-japanese/output/translation-stats.json` - 処理統計
+- `/scripts/translate-to-japanese/output/errors.log` - エラーログ
 
-2. **レート制限対応**
-   - 1秒間隔でのAPI呼び出し（Wikipedia推奨）
-   - 並行処理による効率化（適度な制限下で）
-   - エラーハンドリングとリトライ機能
+---
 
-### Phase 3: データ処理と保存
-1. **テキスト処理**
-   - HTMLタグの除去
-   - 3文への分割と選択
-   - 不適切な内容のフィルタリング
+## 🏗️ システム設計
 
-2. **データ出力**
+### 1. データ型定義 (`types.ts`)
+```typescript
+interface ProgrammingLanguage {
+  name: string;
+  wikipediaTitle: string;
+  summary: string;
+  categories: string;
+  year: number | null;
+}
+
+interface TranslatedLanguage extends ProgrammingLanguage {
+  japaneseSummary: string;
+}
+
+interface BatchResult {
+  processed: number;
+  successful: number;
+  failed: number;
+  errors: TranslationError[];
+}
+
+interface TranslationError {
+  name: string;
+  summary: string;
+  error: string;
+  timestamp: string;
+}
+```
+
+### 2. Gemini APIクライアント (`gemini-client.ts`)
+- Gemini 1.5 Flash-8B使用（最もコスト効率が良い）
+- レート制限対応（1秒間隔）
+- エラーハンドリングとリトライ機能
+- プロンプトテンプレート管理
+
+### 3. CSVプロセッサー (`csv-processor.ts`)
+- 入力CSVファイルの読み込み
+- データバリデーション
+- メモリ効率的なストリーム処理対応
+
+### 4. バッチプロセッサー (`batch-processor.ts`)
+- 25件ずつのバッチ処理（メモリ効率化）
+- プログレスバー表示
+- 中断・再開機能
+- エラー発生時の継続処理
+
+### 5. 出力管理 (`output-manager.ts`)
+- 日本語要約付きCSV出力
+- 処理統計のJSON出力
+- エラーログの管理
+
+---
+
+## 📋 実装ステップ
+
+### Phase 1: プロジェクト初期化
+1. **ディレクトリ作成**
+   - `/scripts/translate-to-japanese/` 作成
+   - 基本的なプロジェクト構造セットアップ
+
+2. **package.json作成**
+   - 必要な依存関係インストール
+   - `@google/generative-ai` - Gemini API
+   - `csv-parser` - CSV読み込み
+   - `csv-writer` - CSV書き込み
+   - `cli-progress` - プログレスバー
+
+### Phase 2: コア機能実装
+1. **型定義**
+   - データ構造の定義
+   - エラーハンドリング用型
+
+2. **Gemini APIクライアント**
+   - API キーの環境変数管理
+   - プロンプト設計（30文字制限の明記）
+   - レート制限とリトライロジック
+
+3. **CSV処理エンジン**
+   - 入力ファイル読み込み
+   - データバリデーション
+
+### Phase 3: バッチ処理システム
+1. **メモリ効率化**
+   - 25件ずつのバッチ処理
+   - 中間結果の定期保存
+
+2. **エラーハンドリング**
+   - 失敗した項目のスキップ
+   - 詳細なエラーログ
+
+3. **プログレス表示**
+   - リアルタイム進捗表示
+   - 統計情報の更新
+
+### Phase 4: 出力システム
+1. **結果ファイル生成**
+   - 日本語要約付きCSV
+   - 処理統計JSON
+
+2. **ログ管理**
+   - エラーログファイル
+   - 実行レポート
+
+---
+
+## 💰 コスト分析
+
+### Gemini 1.5 Flash-8B（最安モデル）
+- **入力**: $0.0375/1M tokens
+- **出力**: $0.15/1M tokens
+- **予想1件あたり**: 入力50tokens + 出力15tokens
+- **612件総コスト**: 約$0.006（1円未満）
+
+### 実行時間予想
+- **API制限**: 1秒/リクエスト
+- **総実行時間**: 約12分（612件 + リトライ込み）
+- **バッチサイズ**: 25件ずつ（約25回のバッチ）
+
+---
+
+## 🔧 環境要件
+
+### 必要な環境変数
+```bash
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### Node.js バージョン
+- Node.js 18+ 推奨
+- TypeScript 5.0+
+
+### 入力ファイル
+- `/scripts/scrape-programming-languages/output/programming-languages.csv`
+- 612行のデータ（ヘッダー含む）
+
+---
+
+## 🎯 成功指標
+
+### 品質指標
+- **翻訳成功率**: 95%以上
+- **文字数制限遵守**: 100%（30文字以内）
+- **処理時間**: 15分以内
+- **エラー率**: 5%以下
+
+### 出力品質例
+```
+Python → "汎用プログラミング言語。AI分野で人気。"
+JavaScript → "Webページに動的な機能を追加する言語。"
+TypeScript → "JavaScriptに型安全性を追加した言語。"
+```
+
+---
+
+## 🚀 次のアクション
+
+1. **環境準備**
+   - Gemini API キーの取得・設定
+   - プロジェクトディレクトリの作成
+
+2. **実装開始**
+   - Phase 1から段階的に実装
+   - 各段階でテスト実行
+
+3. **品質検証**
+   - 小規模テスト（10件程度）
+   - 大規模実行前の動作確認
+
+4. **本格実行**
+   - 全612件の一括処理
+   - 結果の品質チェック
+
+---
+
+## 📝 備考
+
+### メモリ効率化の理由
+- 612件すべてをメモリに載せても問題ないが、将来的な拡張性を考慮
+- バッチ処理により中断・再開が可能
+- エラー発生時の影響範囲を限定
+
+### API選択の理由
+- Gemini 1.5 Flash-8Bは最もコスト効率が良い
+- 30文字程度の短文生成には十分な性能
+- 学割適用で更にお得
+
+この計画に基づいて、段階的にスクリプトを実装していきます 🚀✨
    - JSON形式での保存
    - CSVエクスポート機能
    - データベースへの格納
