@@ -16,6 +16,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "clsx": "^2.1.1",
     "jotai": "^2.12.5",
     "next": "15.3.3",
     "re-resizable": "^6.11.2",
