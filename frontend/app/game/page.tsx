@@ -495,7 +495,8 @@ export default function GamePageMVP() {
   // タイマー効果
   useEffect(() => {
     if (timeLeft <= 0) {
-      router.push('/result');
+      const roomId = currentRoom?.id || 'unknown';
+      router.push(`/result?roomId=${roomId}`);
       return;
     }
 
