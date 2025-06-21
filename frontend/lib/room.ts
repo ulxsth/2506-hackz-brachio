@@ -323,6 +323,7 @@ export const setupRealtimeChannel = (params: {
 
   // プレイヤー更新イベント（スコア変更等）
   debugLog('📊 setupRealtimeChannel: プレイヤー更新イベントリスナー設定')
+  console.log('🔧 DEBUG: プレイヤー更新イベントフィルター設定:', `room_id=eq.${roomId}`)
   channel.on('postgres_changes',
     {
       event: 'UPDATE',
@@ -332,6 +333,7 @@ export const setupRealtimeChannel = (params: {
     },
     (payload) => {
       debugLog('🎯 realtime: プレイヤー更新イベント受信', payload.new)
+      console.log('🔧 DEBUG: プレイヤー更新イベント詳細:', payload)
       const updatedPlayer = payload.new as RoomPlayer
       onPlayerUpdate(updatedPlayer)
     }
@@ -358,7 +360,12 @@ export const setupRealtimeChannel = (params: {
 // チャンネル購読
 export const subscribeChannel = async (channel: RealtimeChannel) => {
   debugLog('🔌 subscribeChannel: チャンネル購読開始')
-  await channel.subscribe()
+  console.log('🔧 DEBUG: チャンネル状態:', channel.state)
+  console.log('🔧 DEBUG: チャンネルトピック:', channel.topic)
+  
+  const subscribeResult = await channel.subscribe()
+  console.log('🔧 DEBUG: 購読結果:', subscribeResult)
+  
   debugLog('✅ subscribeChannel: チャンネル購読成功')
 }
 
@@ -577,6 +584,7 @@ export const updatePlayerScore = async (params: {
     }
 
     // 新しいスコアで更新
+    console.log('🔧 DEBUG: スコア更新前:', { playerId: params.playerId, roomId: params.roomId, currentScore: currentPlayer.score, scoreToAdd: params.scoreToAdd })
     const { error } = await supabase
       .from('room_players')
       .update({
@@ -591,6 +599,7 @@ export const updatePlayerScore = async (params: {
       throw error
     }
 
+    console.log('🔧 DEBUG: スコア更新後:', { playerId: params.playerId, newScore: currentPlayer.score + params.scoreToAdd })
     debugLog('✅ updatePlayerScore: スコア更新成功')
     return { success: true }
 
