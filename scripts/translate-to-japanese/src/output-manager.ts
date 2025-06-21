@@ -34,12 +34,15 @@ export class OutputManager {
       processedLanguages: batchResult.processed,
       successfulTranslations: batchResult.successful,
       failedTranslations: batchResult.failed,
+      warningsCount: batchResult.warnings?.length || 0,
+      lengthExceededCount: batchResult.warnings?.filter(w => w.warningType === 'LENGTH_EXCEEDED').length || 0,
       successRate: (batchResult.successful / batchResult.processed) * 100,
       averageResponseTime: batchResult.duration / batchResult.processed,
       totalProcessingTime: batchResult.duration,
       startTime: batchResult.startTime.toISOString(),
       endTime: batchResult.endTime.toISOString(),
-      errors: batchResult.errors
+      errors: batchResult.errors,
+      warnings: batchResult.warnings || []
     };
 
     try {

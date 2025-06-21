@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GeminiResponse, TranslationError } from './types';
+import { GeminiResponse, TranslationError, TranslationWarning } from './types';
 
 /**
  * Gemini APIクライアント
@@ -10,6 +10,7 @@ export class GeminiClient {
   private model: any;
   private rateLimitDelay: number;
   private maxRetries: number;
+  private warnings: TranslationWarning[] = [];
 
   constructor(apiKey: string, rateLimitDelay: number = 5000, maxRetries: number = 5) {
     this.genAI = new GoogleGenerativeAI(apiKey);
@@ -46,7 +47,7 @@ export class GeminiClient {
         
         // 応答の検証と清書
         const cleanedText = this.cleanResponse(text);
-        const validatedText = this.validateResponse(cleanedText);
+        const validatedText = this.validateResponse(cleanedText, languageName);
         
         console.log(`✅ ${languageName}: "${validatedText}"`);
         
@@ -162,12 +163,26 @@ export class GeminiClient {
   /**
    * レスポンスの検証
    */
-  private validateResponse(text: string): string {
+  private validateResponse(text: string, languageName: string): string {
+    const originalText = text;
+    const originalLength = text.length;
+    
     // 30文字制限チェック
     if (text.length > 30) {
       console.warn(`⚠️  文字数超過 (${text.length}文字): "${text}"`);
       // 30文字で切断して句点を追加
       text = text.substring(0, 29) + '。';
+      
+      // 警告を記録
+      this.warnings.push({
+        name: languageName,
+        warningType: 'LENGTH_EXCEEDED',
+        originalText,
+        adjustedText: text,
+        originalLength,
+        adjustedLength: text.length,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // 最低限の品質チェック
@@ -218,5 +233,19 @@ export class GeminiClient {
     const outputCost = (totalOutputTokens / 1_000_000) * outputCostPerMTokens;
     
     return inputCost + outputCost;
+  }
+
+  /**
+   * 警告一覧の取得
+   */
+  getWarnings(): TranslationWarning[] {
+    return this.warnings;
+  }
+
+  /**
+   * 警告のクリア
+   */
+  clearWarnings(): void {
+    this.warnings = [];
   }
 }

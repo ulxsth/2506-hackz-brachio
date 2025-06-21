@@ -3,10 +3,32 @@
   "processedLanguages": 3,
   "successfulTranslations": 3,
   "failedTranslations": 0,
+  "warningsCount": 2,
+  "lengthExceededCount": 2,
   "successRate": 100,
-  "averageResponseTime": 9367.666666666666,
-  "totalProcessingTime": 28103,
-  "startTime": "2025-06-21T04:31:14.054Z",
-  "endTime": "2025-06-21T04:31:42.157Z",
-  "errors": []
+  "averageResponseTime": 9163.333333333334,
+  "totalProcessingTime": 27490,
+  "startTime": "2025-06-21T04:52:47.933Z",
+  "endTime": "2025-06-21T04:53:15.423Z",
+  "errors": [],
+  "warnings": [
+    {
+      "name": ".QL",
+      "warningType": "LENGTH_EXCEEDED",
+      "originalText": "オブジェクト指向のSQL風問合せ言語。階層データも再帰的に検索可能。",
+      "adjustedText": "オブジェクト指向のSQL風問合せ言語。階層データも再帰的に。",
+      "originalLength": 34,
+      "adjustedLength": 30,
+      "timestamp": "2025-06-21T04:52:59.513Z"
+    },
+    {
+      "name": "Formula",
+      "warningType": "LENGTH_EXCEEDED",
+      "originalText": "Lotus Notesのスクリプト言語。記号「-」で始まる要素が多い。",
+      "adjustedText": "Lotus Notesのスクリプト言語。記号「-」で始まる。",
+      "originalLength": 35,
+      "adjustedLength": 30,
+      "timestamp": "2025-06-21T04:53:10.420Z"
+    }
+  ]
 }

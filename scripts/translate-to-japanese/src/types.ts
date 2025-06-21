@@ -23,6 +23,7 @@ export interface BatchResult {
   processed: number;
   successful: number;
   failed: number;
+  warnings: TranslationWarning[];
   errors: TranslationError[];
   startTime: Date;
   endTime: Date;
@@ -48,12 +49,15 @@ export interface ProcessingStats {
   processedLanguages: number;
   successfulTranslations: number;
   failedTranslations: number;
+  warningsCount: number;
+  lengthExceededCount: number;
   successRate: number;
   averageResponseTime: number;
   totalProcessingTime: number;
   startTime: string;
   endTime: string;
   errors: TranslationError[];
+  warnings: TranslationWarning[];
 }
 
 /**
@@ -106,4 +110,17 @@ export interface ProgressInfo {
   percentage: number;
   eta: number; // 推定残り時間（秒）
   processingTime: number; // 経過時間（秒）
+}
+
+/**
+ * 翻訳警告の詳細 (文字数超過など)
+ */
+export interface TranslationWarning {
+  name: string;
+  warningType: 'LENGTH_EXCEEDED' | 'QUALITY_ISSUE' | 'OTHER';
+  originalText: string;
+  adjustedText: string;
+  originalLength: number;
+  adjustedLength: number;
+  timestamp: string;
 }

@@ -135,6 +135,7 @@ export class BatchProcessor {
       processed: processedCount,
       successful: successCount,
       failed: errors.length,
+      warnings: [], // 旧実装では警告なし
       errors,
       startTime,
       endTime,

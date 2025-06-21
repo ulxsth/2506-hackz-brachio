@@ -3,7 +3,8 @@ import {
   ProgrammingLanguage, 
   TranslatedLanguage, 
   BatchResult, 
-  TranslationError 
+  TranslationError,
+  TranslationWarning 
 } from './types';
 import { GeminiClient } from './gemini-client';
 
@@ -41,6 +42,7 @@ export class SequentialProcessor {
     const startTime = new Date();
     const results: TranslatedLanguage[] = [];
     const errors: TranslationError[] = [];
+    const warnings: TranslationWarning[] = [];
     let processedCount = 0;
     let successCount = 0;
 
@@ -100,6 +102,10 @@ export class SequentialProcessor {
     // プログレスバー終了
     this.progressBar.stop();
     
+    // GeminiClientから警告を取得
+    const clientWarnings = this.geminiClient.getWarnings();
+    warnings.push(...clientWarnings);
+    
     const endTime = new Date();
     const duration = endTime.getTime() - startTime.getTime();
 
@@ -108,6 +114,7 @@ export class SequentialProcessor {
       processed: processedCount,
       successful: successCount,
       failed: errors.length,
+      warnings,
       errors,
       startTime,
       endTime,
@@ -131,11 +138,25 @@ export class SequentialProcessor {
     console.log(`📦 処理件数: ${stats.processed}件`);
     console.log(`✅ 成功: ${stats.successful}件 (${successRate}%)`);
     console.log(`❌ 失敗: ${stats.failed}件`);
+    console.log(`⚠️  警告: ${stats.warnings.length}件`);
+    console.log(`📏 文字数超過: ${stats.warnings.filter(w => w.warningType === 'LENGTH_EXCEEDED').length}件`);
     console.log(`⏱️  処理時間: ${durationMinutes}分`);
     console.log(`🎯 平均処理時間: ${(stats.duration / stats.processed / 1000).toFixed(1)}秒/件`);
     
+    if (stats.warnings.length > 0) {
+      console.log(`\n⚠️  文字数超過が発生した言語:`);
+      const lengthWarnings = stats.warnings.filter(w => w.warningType === 'LENGTH_EXCEEDED').slice(0, 5);
+      lengthWarnings.forEach(warning => {
+        console.log(`   • ${warning.name}: ${warning.originalLength}文字 → ${warning.adjustedLength}文字`);
+      });
+      
+      if (lengthWarnings.length > 5) {
+        console.log(`   ... 他${lengthWarnings.length - 5}件の文字数超過`);
+      }
+    }
+    
     if (stats.failed > 0) {
-      console.log(`\n⚠️  エラーが発生した言語:`);
+      console.log(`\n❌ エラーが発生した言語:`);
       stats.errors.slice(0, 5).forEach(error => {
         console.log(`   • ${error.name}: ${error.error.substring(0, 50)}...`);
       });
