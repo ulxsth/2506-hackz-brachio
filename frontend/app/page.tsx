@@ -39,7 +39,7 @@ export default function Home() {
     const userData = { id: crypto.randomUUID(), name: nickname };
     debugLog('Setting user:', userData);
     setUser(userData);
-    
+
     router.push('/menu');
   };
 
@@ -47,7 +47,7 @@ export default function Home() {
     <div>
       <div>
         <div>
-          <h1>TYPE 2 LIVE</h1>
+          <h1 className='text-3xl font-bold underline'>TYPE 2 LIVE</h1>
           <p>ITタイピングゲーム</p>
         </div>
 
