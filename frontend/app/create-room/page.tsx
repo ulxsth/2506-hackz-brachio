@@ -23,7 +23,7 @@ export default function CreateRoomPage() {
     e.preventDefault();
     setError('');
     clearError(); // グローバルエラーもクリア
-    
+
     if (!roomCode.trim()) {
       setError('あいことばを入力してください');
       return;

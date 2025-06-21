@@ -53,7 +53,7 @@ interface Player {
 
 /**
  * デュアルターンシステム対応のゲーム画面（MVP版）
- * 
+ *
  * 機能:
  * - 通常タイピングターン: 提示された単語を正確に入力
  * - 制約ターン: 指定文字を含むIT用語を入力
@@ -62,11 +62,11 @@ interface Player {
  */
 export default function GamePageMVP() {
   console.log('🎮 GamePageMVP コンポーネント初期化開始');
-  
+
   const router = useRouter();
   const { user, currentRoom, forceEndGame } = useRoom();
   const { startTimer, finishTimer, resetTimer, startTime } = useTypingTimer();
-  
+
   // ゲーム基本状態
   const [timeLeft, setTimeLeft] = useState(300); // 5分
   const [currentInput, setCurrentInput] = useState('');
@@ -80,21 +80,21 @@ export default function GamePageMVP() {
   const [itTerms, setItTerms] = useState<ITTerm[]>([]);
   const [canPass, setCanPass] = useState(true);
   const [passCountdown, setPassCountdown] = useState(0);
-  
+
   // 単語説明表示用State
   const [explanation, setExplanation] = useState<WordExplanation | null>(null);
-  
+
   // ターンシステム
   const [turnManager, setTurnManager] = useState<TurnManager | null>(null);
   const [currentTurn, setCurrentTurn] = useState<TurnData | null>(null);
-  
+
   // WanaKana検証システム
   const wanaKanaValidator = useWanaKanaValidator({
     itTerms: itTerms,
     targetWord: currentTurn?.type === 'typing' ? currentTurn.targetWord : undefined,
     constraintChar: currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined
   });
-  
+
   // プレイヤー情報（モック）
   const [players, setPlayers] = useState<Player[]>([
     { id: 'player-1', name: 'あなた', score: 0, rank: 1 },
@@ -102,7 +102,7 @@ export default function GamePageMVP() {
     { id: 'player-3', name: 'コード忍者', score: 95, rank: 3 },
     { id: 'player-4', name: 'IT戦士', score: 80, rank: 4 }
   ]);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   // ルーム情報とターンマネージャー初期化
@@ -111,7 +111,7 @@ export default function GamePageMVP() {
       if (currentRoom?.id && user?.id) {
         try {
           console.log('🎮 ゲーム初期化開始', { roomId: currentRoom.id, userId: user.id });
-          
+
           // ゲームセッション開始
           if (currentRoom.host_id === user.id) {
             console.log('👑 ホストとしてゲーム開始処理を実行');
@@ -120,7 +120,7 @@ export default function GamePageMVP() {
               roomId: currentRoom.id,
               hostId: currentRoom.host_id
             });
-            
+
             if (result.success && result.data) {
               console.log('✅ ゲームセッション開始成功', result.data);
               // result.dataはRPC関数から返されるJSONオブジェクト
@@ -137,18 +137,18 @@ export default function GamePageMVP() {
             // 非ホストの場合は、ルーム状態変更を監視してセッションIDを取得
             // TODO: リアルタイム更新でセッションIDを取得
           }
-          
+
           // ターンマネージャー初期化
           const manager = new TurnManager(currentRoom.id);
           setTurnManager(manager);
           console.log('🎮 ターンマネージャー初期化完了');
-          
+
         } catch (error) {
           console.error('💥 ゲーム初期化エラー', error);
         }
       }
     };
-    
+
     initializeGame();
   }, [currentRoom?.id, user?.id]);
 
@@ -158,7 +158,7 @@ export default function GamePageMVP() {
       const timer = setTimeout(() => {
         setExplanation(null);
       }, 5000); // 5秒後に自動消去
-      
+
       return () => clearTimeout(timer);
     }
   }, [explanation]);
@@ -166,30 +166,30 @@ export default function GamePageMVP() {
   // IT用語辞書の読み込み
   useEffect(() => {
     console.log('🔍 useEffect(IT用語読み込み)実行開始');
-    
+
     const loadItTerms = async () => {
       try {
         console.log('🔍 IT用語データ読み込み開始...');
         console.log('🔍 Supabase接続確認:', !!supabase);
-        
+
         const { data, error } = await supabase
           .from('it_terms')
           .select('*')
           .limit(1000);
-        
+
         console.log('🔍 Supabaseクエリ結果:', { data: !!data, error, dataLength: data?.length });
-        
+
         if (error) {
           console.error('❌ Supabaseクエリエラー:', error);
           throw error;
         }
-        
+
         setItTerms(data || []);
         console.log(`📚 辞書読み込み完了: ${data?.length || 0}件`);
-        
+
         // デバッグ: 最初の数件のdescriptionを確認
         if (data && data.length > 0) {
-          console.log('🔍 最初の3件のdescription確認:', 
+          console.log('🔍 最初の3件のdescription確認:',
             data.slice(0, 3).map(term => ({
               word: term.display_text,
               description: term.description,
@@ -207,9 +207,9 @@ export default function GamePageMVP() {
         }
       }
     };
-    
+
     loadItTerms();
-    
+
     return () => {
       console.log('🔍 useEffect(IT用語読み込み)クリーンアップ');
     };
@@ -225,24 +225,24 @@ export default function GamePageMVP() {
   // 次のターンを生成
   const generateNextTurn = async () => {
     if (!turnManager) return;
-    
+
     try {
       const newTurn = await turnManager.generateNextTurn([]);
       setCurrentTurn(newTurn);
       resetTimer();
-      
+
       console.log('🔄 新しいターン生成:', newTurn);
-      
+
       // ターン開始時のメッセージ
       if (newTurn.type === 'typing') {
         setFeedback(`📝 通常ターン: 「${newTurn.targetWord}」を正確に入力してください`);
       } else {
         setFeedback(`🎯 制約ターン: 「${newTurn.constraintChar}」を含むIT用語を入力してください (係数×${newTurn.coefficient})`);
       }
-      
+
       // 自動でフィードバックを消去
       setTimeout(() => setFeedback(''), 3000);
-      
+
     } catch (error) {
       console.error('❌ ターン生成エラー:', error);
       setFeedback('ターン生成エラーが発生しました');
@@ -253,7 +253,7 @@ export default function GamePageMVP() {
   const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const word = currentInput.trim();
-    
+
     console.log('🔍 handleInputSubmit開始:', {
       word,
       itTermsLength: itTerms.length,
@@ -261,7 +261,7 @@ export default function GamePageMVP() {
       hasCurrentRoom: !!currentRoom,
       hasCurrentTurn: !!currentTurn
     });
-    
+
     if (!word || !user || !currentRoom || !currentTurn) {
       console.log('⚠️ 処理条件不足でリターン');
       return;
@@ -283,12 +283,12 @@ export default function GamePageMVP() {
       itTermsLength: itTerms.length,
       itTermsFirst3: itTerms.slice(0, 3).map(t => t.display_text)
     });
-    
+
     if (isValid && validation.matchedTerm) {
-      matchedTerm = itTerms.find(term => 
+      matchedTerm = itTerms.find(term =>
         term.display_text === validation.matchedTerm
       ) || null;
-      
+
       console.log('🔍 用語マッチング結果:', {
         searchTerm: validation.matchedTerm,
         foundTerm: matchedTerm?.display_text,
@@ -301,7 +301,7 @@ export default function GamePageMVP() {
       // 制約文字が含まれているかの確認
       const constraintHiragana = validation.hiraganaPreview;
       const constraintCharHiragana = wanaKanaValidator.validator.validateInput(currentTurn.constraintChar).hiraganaPreview;
-      
+
       if (!constraintHiragana.includes(constraintCharHiragana)) {
         isValid = false;
         matchedTerm = null;
@@ -317,7 +317,7 @@ export default function GamePageMVP() {
     if (isValid && matchedTerm) {
       // 正解処理
       const newCombo = combo + 1;
-      
+
       // 得点計算
       const scoreCoefficient = currentTurn.type === 'typing' ? coefficient : currentTurn.coefficient;
       points = calculateScore({
@@ -327,20 +327,20 @@ export default function GamePageMVP() {
         coefficient: scoreCoefficient,
         combo: newCombo
       });
-      
+
       // 状態更新
       setMyScore(prev => prev + points);
       setCombo(newCombo);
       setMaxCombo(max => Math.max(max, newCombo));
       setWords(prev => [...prev, matchedTerm.display_text]);
-      
+
       // フィードバック
       if (currentTurn.type === 'typing') {
         setFeedback(`✅ 正解！「${matchedTerm.display_text}」 +${points}点 (${newCombo}コンボ) [速度係数×${coefficient.toFixed(1)}]`);
       } else {
         setFeedback(`✅ 正解！「${matchedTerm.display_text}」 +${points}点 (${newCombo}コンボ) [制約係数×${currentTurn.coefficient}]`);
       }
-      
+
       // 単語説明を表示
       console.log('🔍 説明表示デバッグ:', {
         word: matchedTerm.display_text,
@@ -349,7 +349,7 @@ export default function GamePageMVP() {
         descriptionLength: matchedTerm.description?.length,
         fullTerm: matchedTerm
       });
-      
+
       setExplanation({
         word: matchedTerm.display_text,
         description: matchedTerm.description || '説明がありません',
@@ -358,16 +358,16 @@ export default function GamePageMVP() {
         combo: newCombo,
         isVisible: true
       });
-      
+
       // データベースに記録
       try {
         console.log('🔍 DB記録処理開始:', { gameSessionId, userId: user?.id });
-        
+
         if (gameSessionId) {
           // タイピング測定データを取得
           const typingData = finishTimer();
           console.log('📊 タイピングデータ取得:', typingData);
-          
+
           console.log('📝 submitWord呼び出し開始');
           await submitWord({
             gameSessionId,
@@ -376,9 +376,9 @@ export default function GamePageMVP() {
             score: points,
             comboAtTime: newCombo,
             isValid: true,
-            constraintsMet: currentTurn.type === 'typing' ? [] : [{ 
-              letter: currentTurn.constraintChar || '', 
-              coefficient: currentTurn.coefficient 
+            constraintsMet: currentTurn.type === 'typing' ? [] : [{
+              letter: currentTurn.constraintChar || '',
+              coefficient: currentTurn.coefficient
             }],
             // デュアルターンシステム対応
             turnType: currentTurn.type,
@@ -389,7 +389,7 @@ export default function GamePageMVP() {
             speedCoefficient: coefficient
           });
           console.log('✅ submitWord呼び出し完了');
-          
+
           console.log('🎯 updatePlayerScore呼び出し開始');
           await updatePlayerScore({
             playerId: user.id,
@@ -401,19 +401,19 @@ export default function GamePageMVP() {
         } else {
           console.log('⚠️ gameSessionId がnullのため、DB記録をスキップ');
         }
-        
+
         console.log('✅ DB更新成功:', { word, points, newCombo });
       } catch (error) {
         console.error('❌ DB更新失敗:', error);
       }
-      
+
       // 次のターンを生成
       generateNextTurn();
-      
+
     } else {
       // 不正解処理
       setCombo(0);
-      
+
       if (currentTurn.type === 'typing') {
         setFeedback(`❌ 「${currentTurn.targetWord}」を正確に入力してください...`);
       } else {
@@ -427,7 +427,7 @@ export default function GamePageMVP() {
 
     // 入力をクリア
     setCurrentInput('');
-    
+
     // フィードバックを3秒後に消去
     setTimeout(() => setFeedback(''), 3000);
   };
@@ -435,14 +435,14 @@ export default function GamePageMVP() {
   // パス機能
   const handlePass = () => {
     if (!canPass) return;
-    
+
     setCanPass(false);
     setPassCountdown(10);
     setCombo(0);
-    
+
     // 次のターンを生成
     generateNextTurn();
-    
+
     setFeedback('⏭️ パス！次のターンです');
     setTimeout(() => setFeedback(''), 3000);
   };
@@ -459,7 +459,7 @@ export default function GamePageMVP() {
         handleCloseExplanation();
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [explanation]);
@@ -467,13 +467,13 @@ export default function GamePageMVP() {
   // ゲーム終了処理
   const handleEndGame = async () => {
     if (!user || !currentRoom) return;
-    
+
     try {
       if (currentRoom.host_id !== user.id) {
         alert('ゲーム終了はホストのみ可能です');
         return;
       }
-      
+
       const result = await forceEndGame();
       if (result.success) {
         const roomId = currentRoom?.id || 'unknown';
@@ -526,7 +526,7 @@ export default function GamePageMVP() {
       rank: index + 1
     }));
     setPlayers(updatedPlayers);
-    
+
     const myPlayer = updatedPlayers.find(p => p.name === 'あなた');
     if (myPlayer) {
       setMyRank(myPlayer.rank);
@@ -535,8 +535,8 @@ export default function GamePageMVP() {
 
   // 自分のスコアをプレイヤーリストに反映
   useEffect(() => {
-    setPlayers(prev => prev.map(player => 
-      player.name === 'あなた' 
+    setPlayers(prev => prev.map(player =>
+      player.name === 'あなた'
         ? { ...player, score: myScore }
         : player
     ));
@@ -567,14 +567,14 @@ export default function GamePageMVP() {
               <span className="text-yellow-400">{minutes}:{seconds.toString().padStart(2, '0')}</span>
             </div>
           </div>
-          
+
           {isHost && (
             <Button
               variant="danger"
               onClick={handleEndGame}
               size="sm"
             >
-              🔚 End Game
+              🔚 ゲーム終了
             </Button>
           )}
         </div>
@@ -589,28 +589,27 @@ export default function GamePageMVP() {
                   <div className="flex items-center gap-2">
                     {currentTurn.type === 'typing' ? (
                       <span className="text-blue-400 font-bold">
-                        📝 Normal Turn #{currentTurn.sequenceNumber}
+                        📝 通常ターン #{currentTurn.sequenceNumber}
                       </span>
                     ) : (
                       <span className="text-purple-400 font-bold">
-                        🎯 Constraint Turn #{currentTurn.sequenceNumber}
+                        🎯 制約ターン #{currentTurn.sequenceNumber}
                       </span>
                     )}
                   </div>
-                  
+
                   {currentTurn.type === 'typing' && currentTurn.targetWord && (
                     <div className="text-2xl font-bold text-center py-4 bg-gray-900/50 rounded border border-gray-700">
                       <span className="text-yellow-400">{currentTurn.targetWord}</span>
                     </div>
                   )}
-                  
+
                   {currentTurn.type === 'constraint' && currentTurn.constraintChar && (
                     <div className="text-center py-4 bg-gray-900/50 rounded border border-gray-700">
                       <p className="text-lg text-purple-300 mb-2">
-                        Type an IT term containing 
-                        <span className="text-yellow-400 font-bold mx-2">「{currentTurn.constraintChar}」</span>
+                        「<span className="text-yellow-400 font-bold mx-2">{currentTurn.constraintChar}</span>」を含むIT用語を入力してください
                       </p>
-                      <span className="text-sm text-green-400">Multiplier: ×{currentTurn.coefficient}</span>
+                      <span className="text-sm text-green-400">係数: ×{currentTurn.coefficient}</span>
                     </div>
                   )}
                 </div>
@@ -625,17 +624,17 @@ export default function GamePageMVP() {
                     ref={inputRef}
                     value={currentInput}
                     onChange={setCurrentInput}
-                    onSubmit={() => handleInputSubmit({ preventDefault: () => {} } as React.FormEvent)}
+                    onSubmit={() => handleInputSubmit({ preventDefault: () => { } } as React.FormEvent)}
                     onFocus={() => startTimer()}
                     itTerms={itTerms}
                     targetWord={currentTurn?.type === 'typing' ? currentTurn.targetWord : undefined}
                     constraintChar={currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined}
                     placeholder={
-                      currentTurn?.type === 'typing' 
+                      currentTurn?.type === 'typing'
                         ? `Type "${currentTurn.targetWord}"...`
                         : currentTurn?.type === 'constraint'
-                        ? `Type IT term with "${currentTurn.constraintChar}"...`
-                        : 'Type a word...'
+                          ? `Type IT term with "${currentTurn.constraintChar}"...`
+                          : 'Type a word...'
                     }
                     showPreview={true}
                     showSuggestions={currentTurn?.type === 'constraint'}
@@ -669,9 +668,9 @@ export default function GamePageMVP() {
               <Card className="bg-purple-900/20 border-purple-500">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-purple-300 font-bold">📖 単語説明</h4>
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleCloseExplanation}
                   >
                     ×

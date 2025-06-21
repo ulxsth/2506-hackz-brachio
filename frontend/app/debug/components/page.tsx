@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Button, 
-  Input, 
-  TextArea, 
-  Select, 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent, 
+import {
+  Button,
+  Input,
+  TextArea,
+  Select,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
   CardFooter,
-  Modal 
+  Modal
 } from '../../../components/ui';
 
 export default function ComponentsDebugPage() {
@@ -75,26 +75,26 @@ export default function ComponentsDebugPage() {
           <CardDescription>入力フィールドコンポーネント</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input 
+          <Input
             label="基本的な入力"
             placeholder="何か入力してください..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
           />
-          
-          <Input 
+
+          <Input
             label="パスワード入力"
             type="password"
             placeholder="パスワードを入力..."
           />
-          
-          <Input 
+
+          <Input
             label="エラー状態"
             error="このフィールドは必須です"
             placeholder="エラー表示例"
           />
-          
-          <Input 
+
+          <Input
             label="無効化"
             disabled
             placeholder="無効化された入力"
@@ -109,15 +109,15 @@ export default function ComponentsDebugPage() {
           <CardDescription>複数行テキスト入力コンポーネント</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <TextArea 
+          <TextArea
             label="メッセージ"
             placeholder="複数行のテキストを入力してください..."
             rows={4}
             value={textAreaValue}
             onChange={(e) => setTextAreaValue(e.target.value)}
           />
-          
-          <TextArea 
+
+          <TextArea
             label="エラー状態"
             error="内容が不正です"
             placeholder="エラー表示例"
@@ -133,7 +133,7 @@ export default function ComponentsDebugPage() {
           <CardDescription>選択コンポーネント</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select 
+          <Select
             label="プログラミング言語"
             value={selectValue}
             onChange={(e) => setSelectValue(e.target.value)}
@@ -145,8 +145,8 @@ export default function ComponentsDebugPage() {
             <option value="rust">Rust</option>
             <option value="go">Go</option>
           </Select>
-          
-          <Select 
+
+          <Select
             label="エラー状態"
             error="選択が必要です"
           >
@@ -206,7 +206,7 @@ export default function ComponentsDebugPage() {
           <Button onClick={() => setModalOpen(true)}>
             モーダルを開く
           </Button>
-          
+
           <div className="text-sm font-mono text-terminalText opacity-70">
             <p>• ESCキーで閉じることができます</p>
             <p>• オーバーレイクリックで閉じることができます</p>
@@ -231,8 +231,8 @@ export default function ComponentsDebugPage() {
       </Card>
 
       {/* Modal */}
-      <Modal 
-        isOpen={modalOpen} 
+      <Modal
+        isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title="サンプルモーダル"
         className="max-w-lg"
@@ -242,12 +242,12 @@ export default function ComponentsDebugPage() {
             これはモーダルダイアログのサンプルです。
             ターミナル風のデザインで統一されています。
           </p>
-          
-          <Input 
+
+          <Input
             label="モーダル内の入力"
             placeholder="モーダル内でも入力できます"
           />
-          
+
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               キャンセル

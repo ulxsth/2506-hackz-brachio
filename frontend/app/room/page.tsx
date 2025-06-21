@@ -34,7 +34,7 @@ export default function RoomPage() {
 
   const handleStartGame = async () => {
     setError('');
-    
+
     if (players.length < 2) {
       setError('2人以上で開始できます');
       return;
@@ -76,11 +76,11 @@ export default function RoomPage() {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="text-3xl">🎮</span>
-            <h1 className="text-2xl font-bold">room</h1>
+            <h1 className="text-2xl font-bold">ルーム待機</h1>
           </div>
-          <p className="text-green-300">Waiting for players...</p>
+          <p className="text-green-300">プレイヤー待機中...</p>
           {connectionState === 'connecting' && (
-            <p className="text-yellow-400 text-sm mt-1">Connecting to Supabase...</p>
+            <p className="text-yellow-400 text-sm mt-1">Supabaseに接続中...</p>
           )}
         </div>
 
@@ -89,7 +89,7 @@ export default function RoomPage() {
             <div className="flex items-start gap-2">
               <span className="text-red-400">⚠️</span>
               <div>
-                <p className="text-red-400 font-semibold">Error</p>
+                <p className="text-red-400 font-semibold">エラー</p>
                 <p className="text-red-300 text-sm">{error || globalError}</p>
               </div>
             </div>
@@ -98,28 +98,28 @@ export default function RoomPage() {
 
         {/* Room Information */}
         <Card>
-          <h2 className="text-lg font-bold text-cyan-400 mb-3">📝 Room Info</h2>
+          <h2 className="text-lg font-bold text-cyan-400 mb-3">📝 ルーム情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-400">Room Code:</span>
+              <span className="text-gray-400">ルームコード:</span>
               <span className="text-yellow-400 font-mono font-bold">
                 {currentRoom.id}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Time Limit:</span>
-              <span className="text-blue-400">{settings.timeLimit} min</span>
+              <span className="text-gray-400">制限時間:</span>
+              <span className="text-blue-400">{settings.timeLimit} 分</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Players:</span>
-              <span className="text-green-400">{players.length}/{settings.maxPlayers}</span>
+              <span className="text-gray-400">プレイヤー:</span>
+              <span className="text-green-400">{players.length}/{settings.maxPlayers} 人</span>
             </div>
           </div>
         </Card>
 
         {/* Players List */}
         <Card>
-          <h2 className="text-lg font-bold text-cyan-400 mb-3">👥 Players ({players.length})</h2>
+          <h2 className="text-lg font-bold text-cyan-400 mb-3">👥 プレイヤー ({players.length} 人)</h2>
           <div className="space-y-2">
             {players.map((player) => (
               <div
@@ -134,14 +134,14 @@ export default function RoomPage() {
                     <span className="text-green-300">{player.name}</span>
                     {currentRoom.host_id === player.id && (
                       <span className="text-yellow-400 text-xs bg-yellow-900/30 px-2 py-1 rounded">
-                        👑 HOST
+                        👑 ホスト
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 text-xs">ONLINE</span>
+                  <span className="text-green-400 text-xs">オンライン</span>
                 </div>
               </div>
             ))}
@@ -150,12 +150,12 @@ export default function RoomPage() {
 
         {/* Game Rules */}
         <Card>
-          <h3 className="text-lg font-bold text-yellow-400 mb-3">📋 Game Rules</h3>
+          <h3 className="text-lg font-bold text-yellow-400 mb-3">📋 ゲームルール</h3>
           <div className="space-y-2 text-sm text-gray-300">
-            <p>• Type IT terms based on given constraints to score points</p>
-            <p>• Correct answers give points, consecutive correct answers give combo bonus</p>
-            <p>• Use pass function to change constraints (10sec cooldown)</p>
-            <p>• Player with highest score within time limit wins!</p>
+            <p>• 制約条件に沿ったIT用語をタイピングして得点を競います</p>
+            <p>• 正解すると得点獲得、連続正解でコンボボーナス</p>
+            <p>• パス機能で制約を変更可能（10秒クールダウン）</p>
+            <p>• 制限時間内により多くの得点を獲得した人の勝利！</p>
           </div>
         </Card>
 
@@ -166,20 +166,20 @@ export default function RoomPage() {
             onClick={handleLeaveRoom}
             className="flex-1"
           >
-            Leave Room
+            退室
           </Button>
-          
+
           {isHost ? (
             <Button
               onClick={handleStartGame}
               disabled={!canStartGame}
               className="flex-2"
             >
-              {canStartGame ? '🚀 Start Game!' : `⏳ Need ${2 - players.length} more player(s)`}
+              {canStartGame ? '🚀 ゲーム開始！' : `⏳ あと ${2 - players.length} 人待機中`}
             </Button>
           ) : (
             <div className="flex-2 flex items-center justify-center bg-gray-900/50 border border-gray-700 rounded px-4 py-2">
-              <span className="text-yellow-400 text-sm">⏳ Waiting for host to start...</span>
+              <span className="text-yellow-400 text-sm">⏳ ホストの開始を待機中...</span>
             </div>
           )}
         </div>
@@ -187,7 +187,7 @@ export default function RoomPage() {
         {/* Real-time Update Notice */}
         <div className="text-center">
           <p className="text-gray-500 text-xs">
-            💡 Player join/leave updates in real-time
+            💡 参加者の入退室はリアルタイムで更新されます
           </p>
         </div>
       </div>

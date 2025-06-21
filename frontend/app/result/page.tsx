@@ -33,14 +33,14 @@ function ResultPageContent() {
 
         // URLパラメータからルームIDを取得
         const roomId = searchParams.get('roomId') || searchParams.get('room');
-        
+
         if (!roomId) {
           throw new Error('ルームIDが見つかりません');
         }
 
         // 実際のゲーム結果を取得
         const result = await getGameResults(roomId);
-        
+
         if (result.success && result.data) {
           // 型を変換（API結果→UI表示用）
           const convertedResults: PlayerResult[] = result.data.results.map((player: any) => ({
@@ -54,7 +54,7 @@ function ResultPageContent() {
           }));
 
           setResults(convertedResults);
-          
+
           // 自分の結果を特定（name="あなた"または最初のプレイヤー）
           const myData = convertedResults.find(r => r.name === 'あなた') || convertedResults[0];
           setMyResult(myData || null);
@@ -64,7 +64,7 @@ function ResultPageContent() {
       } catch (err) {
         console.error('結果取得エラー:', err);
         setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
-        
+
         // エラー時はダミーデータにフォールバック
         const fallbackResults: PlayerResult[] = [
           {
@@ -104,7 +104,7 @@ function ResultPageContent() {
             accuracy: 92.3
           }
         ];
-        
+
         setResults(fallbackResults);
         const myData = fallbackResults.find(r => r.name === 'あなた');
         setMyResult(myData || null);
@@ -234,11 +234,10 @@ function ResultPageContent() {
             {results.map((player, index) => (
               <div
                 key={player.id}
-                className={`flex items-center justify-between p-3 rounded border ${
-                  player.name === 'あなた' || player.name === myResult.name 
-                    ? 'bg-blue-900/30 border-blue-500' 
+                className={`flex items-center justify-between p-3 rounded border ${player.name === 'あなた' || player.name === myResult.name
+                    ? 'bg-blue-900/30 border-blue-500'
                     : 'bg-gray-900/50 border-gray-700'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-gradient-to-r ${getRankColor(player.rank)}`}>
@@ -329,9 +328,9 @@ function ResultPageContent() {
           <div className="text-lg text-green-300">
             <p>
               {myResult.rank === 1 ? '🎉 Congratulations! Excellent typing skills! 🎉' :
-               myResult.rank === 2 ? '🥈 So close! Aim for 1st place next time!' :
-               myResult.rank === 3 ? '🥉 Nice game! You still have room to grow!' :
-               '💪 Great job! Practice more and try again!'}
+                myResult.rank === 2 ? '🥈 So close! Aim for 1st place next time!' :
+                  myResult.rank === 3 ? '🥉 Nice game! You still have room to grow!' :
+                    '💪 Great job! Practice more and try again!'}
             </p>
           </div>
         </Card>

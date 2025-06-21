@@ -52,7 +52,7 @@ export default function Home() {
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="overflow-x-auto w-full h-full hide-scrollbar"
       style={{ scrollBehavior: 'auto' }}

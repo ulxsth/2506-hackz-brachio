@@ -70,14 +70,14 @@ export default function JoinRoomPage() {
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">🚪</span>
-            <h1 className="text-xl font-bold">join-room</h1>
+            <h1 className="text-xl font-bold">ルーム参加</h1>
           </div>
           <p className="text-green-300 text-sm">
-            Enter the room code to join a game session
+            ルームコードを入力してゲームセッションに参加
           </p>
           {user?.name && (
             <p className="text-blue-400 text-sm mt-2">
-              User: <span className="text-cyan-400">{user.name}</span>
+              ユーザー: <span className="text-cyan-400">{user.name}</span>
             </p>
           )}
         </div>
@@ -85,14 +85,14 @@ export default function JoinRoomPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="roomCode" className="block text-sm mb-2">
-              Room Code <span className="text-red-400">*</span>
+              ルームコード <span className="text-red-400">*</span>
             </label>
             <Input
               type="text"
               id="roomCode"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value)}
-              placeholder="Enter room code..."
+              placeholder="ルームコードを入力..."
               disabled={isLoading}
               required
             />
@@ -103,7 +103,7 @@ export default function JoinRoomPage() {
               <div className="flex items-start gap-2">
                 <span className="text-red-400">⚠️</span>
                 <div>
-                  <p className="text-red-400 font-semibold text-sm">Failed to join</p>
+                  <p className="text-red-400 font-semibold text-sm">参加に失敗しました</p>
                   <p className="text-red-300 text-sm">{error || globalError}</p>
                 </div>
               </div>
@@ -111,11 +111,11 @@ export default function JoinRoomPage() {
           )}
 
           <Card className="bg-gray-900/50">
-            <h3 className="text-yellow-400 font-semibold mb-2">💡 Hints</h3>
+            <h3 className="text-yellow-400 font-semibold mb-2">💡 ヒント</h3>
             <div className="space-y-1 text-sm text-gray-300">
-              <p>• Get the room code from the host</p>
-              <p>• Case sensitive</p>
-              <p>• Cannot join if room is full</p>
+              <p>• ホストからルームコードを教えてもらいましょう</p>
+              <p>• 大文字・小文字は区別されます</p>
+              <p>• ルームが満員の場合は参加できません</p>
             </div>
           </Card>
 
@@ -127,7 +127,7 @@ export default function JoinRoomPage() {
               disabled={isLoading}
               className="flex-1"
             >
-              Back
+              戻る
             </Button>
             <Button
               type="submit"
@@ -137,10 +137,10 @@ export default function JoinRoomPage() {
               {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Joining...
+                  参加中...
                 </>
               ) : (
-                'Join Room'
+                '参加'
               )}
             </Button>
           </div>
@@ -148,7 +148,7 @@ export default function JoinRoomPage() {
 
         <div className="mt-4 text-center">
           <p className="text-gray-400 text-sm">
-            Want to create a room? Go back → "Create Room"
+            ルームを作成したい場合は「戻る」→「ルーム作成」を選択してください
           </p>
         </div>
       </Card>

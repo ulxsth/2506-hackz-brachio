@@ -35,11 +35,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, classNa
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* オーバーレイ */}
-      <div 
+      <div
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
-      
+
       {/* モーダルコンテンツ */}
       <div
         className={cn(
@@ -60,7 +60,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, classNa
             </button>
           </div>
         )}
-        
+
         {/* コンテンツ */}
         <div className="p-4">
           {children}
