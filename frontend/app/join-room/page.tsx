@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
+import { Button, Input, Card } from '@/components/ui';
 
 export default function JoinRoomPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -64,86 +65,93 @@ export default function JoinRoomPage() {
   };
 
   return (
-    <div>
-      <div>
-        <div>
-          <div>
-            <span>🚪</span>
+    <div className="min-h-screen bg-black text-green-400 font-mono p-4">
+      <Card className="max-w-md mx-auto">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">🚪</span>
+            <h1 className="text-xl font-bold">join-room</h1>
           </div>
-          <h1>ルームに参加</h1>
-          <p>あいことばを入力してルームに参加します</p>
+          <p className="text-green-300 text-sm">
+            Enter the room code to join a game session
+          </p>
           {user?.name && (
-            <p>
-              ニックネーム: <span>{user.name}</span>
+            <p className="text-blue-400 text-sm mt-2">
+              User: <span className="text-cyan-400">{user.name}</span>
             </p>
           )}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="roomCode">
-              あいことば <span>*</span>
+            <label htmlFor="roomCode" className="block text-sm mb-2">
+              Room Code <span className="text-red-400">*</span>
             </label>
-            <input
+            <Input
               type="text"
               id="roomCode"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value)}
-              placeholder="ルームのあいことばを入力"
+              placeholder="Enter room code..."
               disabled={isLoading}
               required
             />
           </div>
 
           {(error || globalError) && (
-            <div>
-              <span>⚠️</span>
-              <div>
-                <p>参加できませんでした</p>
-                <p>{error || globalError}</p>
+            <div className="bg-red-900/20 border border-red-500 rounded p-3">
+              <div className="flex items-start gap-2">
+                <span className="text-red-400">⚠️</span>
+                <div>
+                  <p className="text-red-400 font-semibold text-sm">Failed to join</p>
+                  <p className="text-red-300 text-sm">{error || globalError}</p>
+                </div>
               </div>
             </div>
           )}
 
-          <div>
-            <h3>参加のヒント</h3>
-            <div>
-              <p>• ホストからあいことばを教えてもらいましょう</p>
-              <p>• 大文字・小文字は区別されます</p>
-              <p>• ルームが満員の場合は参加できません</p>
+          <Card className="bg-gray-900/50">
+            <h3 className="text-yellow-400 font-semibold mb-2">💡 Hints</h3>
+            <div className="space-y-1 text-sm text-gray-300">
+              <p>• Get the room code from the host</p>
+              <p>• Case sensitive</p>
+              <p>• Cannot join if room is full</p>
             </div>
-          </div>
+          </Card>
 
-          <div>
-            <button
+          <div className="flex gap-2">
+            <Button
               type="button"
+              variant="secondary"
               onClick={handleBack}
               disabled={isLoading}
+              className="flex-1"
             >
-              戻る
-            </button>
-            <button
+              Back
+            </Button>
+            <Button
               type="submit"
               disabled={isLoading}
+              className="flex-1"
             >
               {isLoading ? (
                 <>
-                  <div></div>
-                  参加中...
+                  <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Joining...
                 </>
               ) : (
-                '参加する'
+                'Join Room'
               )}
-            </button>
+            </Button>
           </div>
         </form>
 
-        <div>
-          <p>
-            ルームを作成したい場合は「戻る」→「ルームを作る」を選択してください
+        <div className="mt-4 text-center">
+          <p className="text-gray-400 text-sm">
+            Want to create a room? Go back → "Create Room"
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -16,6 +16,8 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.50.0"
+    "@supabase/supabase-js": "^2.50.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1"
   }
 }

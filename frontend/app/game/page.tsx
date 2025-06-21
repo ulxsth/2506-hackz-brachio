@@ -10,6 +10,7 @@ import { calculateScore } from '@/lib/scoring';
 import { useTypingTimer } from '@/hooks/useTypingTimer';
 import { TypingInput } from '@/components/TypingInput';
 import { useWanaKanaValidator } from '@/hooks/useWanaKanaValidator';
+import { Button, Card } from '@/components/ui';
 import type { Database } from '@/lib/database.types';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
@@ -554,64 +555,71 @@ export default function GamePageMVP() {
   const seconds = timeLeft % 60;
 
   return (
-    <div>
-      <div>
-        {/* ヘッダー */}
-        <div>
-          <div>
-            <h1>
-              🎮 デュアルターンゲーム
+    <div className="min-h-screen bg-black text-green-400 font-mono p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              🎮 <span className="text-cyan-400">dual-turn-game</span>
             </h1>
-            <div>
-              {minutes}:{seconds.toString().padStart(2, '0')}
+            <div className="text-xl font-mono bg-gray-900 px-3 py-1 rounded border border-gray-700">
+              <span className="text-yellow-400">{minutes}:{seconds.toString().padStart(2, '0')}</span>
             </div>
           </div>
           
           {isHost && (
-            <button
+            <Button
+              variant="danger"
               onClick={handleEndGame}
+              size="sm"
             >
-              🔚 ゲーム終了
-            </button>
+              🔚 End Game
+            </Button>
           )}
         </div>
 
-        <div>
-          {/* メインゲーム画面 */}
-          <div>
-            <div>
-              {/* ターン情報 */}
-              <div>
-                {currentTurn && (
-                  <div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Game Area */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Turn Information */}
+            <Card>
+              {currentTurn && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
                     {currentTurn.type === 'typing' ? (
-                      <div>
-                        📝 通常ターン #{currentTurn.sequenceNumber}
-                      </div>
+                      <span className="text-blue-400 font-bold">
+                        📝 Normal Turn #{currentTurn.sequenceNumber}
+                      </span>
                     ) : (
-                      <div>
-                        🎯 制約ターン #{currentTurn.sequenceNumber}
-                      </div>
-                    )}
-                    
-                    {currentTurn.type === 'typing' && currentTurn.targetWord && (
-                      <div>
-                        {currentTurn.targetWord}
-                      </div>
-                    )}
-                    
-                    {currentTurn.type === 'constraint' && currentTurn.constraintChar && (
-                      <div>
-                        「<span>{currentTurn.constraintChar}</span>」を含むIT用語を入力
-                        <span>(係数×{currentTurn.coefficient})</span>
-                      </div>
+                      <span className="text-purple-400 font-bold">
+                        🎯 Constraint Turn #{currentTurn.sequenceNumber}
+                      </span>
                     )}
                   </div>
-                )}
-              </div>
+                  
+                  {currentTurn.type === 'typing' && currentTurn.targetWord && (
+                    <div className="text-2xl font-bold text-center py-4 bg-gray-900/50 rounded border border-gray-700">
+                      <span className="text-yellow-400">{currentTurn.targetWord}</span>
+                    </div>
+                  )}
+                  
+                  {currentTurn.type === 'constraint' && currentTurn.constraintChar && (
+                    <div className="text-center py-4 bg-gray-900/50 rounded border border-gray-700">
+                      <p className="text-lg text-purple-300 mb-2">
+                        Type an IT term containing 
+                        <span className="text-yellow-400 font-bold mx-2">「{currentTurn.constraintChar}」</span>
+                      </p>
+                      <span className="text-sm text-green-400">Multiplier: ×{currentTurn.coefficient}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
 
-              {/* WanaKanaリアルタイム入力フォーム */}
-              <form onSubmit={handleInputSubmit}>
+            {/* Input Form */}
+            <Card>
+              <form onSubmit={handleInputSubmit} className="space-y-4">
                 <div>
                   <TypingInput
                     ref={inputRef}
@@ -624,136 +632,155 @@ export default function GamePageMVP() {
                     constraintChar={currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined}
                     placeholder={
                       currentTurn?.type === 'typing' 
-                        ? `「${currentTurn.targetWord}」を入力してください...`
+                        ? `Type "${currentTurn.targetWord}"...`
                         : currentTurn?.type === 'constraint'
-                        ? `「${currentTurn.constraintChar}」を含むIT用語を入力...`
-                        : '単語を入力してください...'
+                        ? `Type IT term with "${currentTurn.constraintChar}"...`
+                        : 'Type a word...'
                     }
                     showPreview={true}
                     showSuggestions={currentTurn?.type === 'constraint'}
                   />
-                  <div>
-                    <button type="submit">
-                      送信
-                    </button>
-                    <button
+                  <div className="flex gap-2 mt-3">
+                    <Button type="submit" className="flex-1">
+                      Submit
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={handlePass}
                       disabled={!canPass}
                     >
-                      {passCountdown > 0 ? `${passCountdown}s` : 'パス'}
-                    </button>
+                      {passCountdown > 0 ? `${passCountdown}s` : 'Pass'}
+                    </Button>
                   </div>
                 </div>
               </form>
+            </Card>
 
-              {/* フィードバック */}
-              {feedback && (
-                <div>
-                  <div>{feedback}</div>
-                </div>
-              )}
+            {/* Feedback */}
+            {feedback && (
+              <Card className="bg-blue-900/20 border-blue-500">
+                <div className="text-blue-300">{feedback}</div>
+              </Card>
+            )}
 
-              {/* 単語説明表示エリア */}
-              {explanation && explanation.isVisible && (
-                <div>
-                  <div>
-                    <h4>📖 単語説明</h4>
-                    <button onClick={handleCloseExplanation}>×</button>
+            {/* 単語説明表示エリア */}
+            {explanation && explanation.isVisible && (
+              <Card className="bg-purple-900/20 border-purple-500">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-purple-300 font-bold">📖 単語説明</h4>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={handleCloseExplanation}
+                  >
+                    ×
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <h5 className="text-yellow-400 font-bold text-lg">「{explanation.word}」</h5>
+                  <div className="flex gap-4 text-sm text-gray-300">
+                    <span>難易度: {explanation.difficulty}</span>
+                    <span>獲得: {explanation.score}点 ({explanation.combo}コンボ)</span>
                   </div>
-                  <div>
-                    <h5>「{explanation.word}」</h5>
-                    <p>難易度: {explanation.difficulty}</p>
-                    <p>獲得: {explanation.score}点 ({explanation.combo}コンボ)</p>
+                  <div className="text-green-300 leading-relaxed mt-3">
+                    {explanation.description}
                   </div>
-                  <div>
-                    <p>説明内容: "{explanation.description}"</p>
-                    <p>説明の長さ: {explanation.description?.length || 0}文字</p>
-                    <p>説明の型: {typeof explanation.description}</p>
+                  {/* デバッグ情報（開発時のみ） */}
+                  <div className="text-xs text-gray-500 mt-2 border-t border-gray-700 pt-2">
+                    <div>説明の長さ: {explanation.description?.length || 0}文字</div>
+                    <div>説明の型: {typeof explanation.description}</div>
                   </div>
                 </div>
-              )}
+              </Card>
+            )}
 
-              {/* 統計情報 */}
-              <div>
+            {/* Statistics */}
+            <Card>
+              <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
-                  <div>{myScore}</div>
-                  <div>スコア</div>
+                  <div className="text-2xl font-bold text-yellow-400">{myScore}</div>
+                  <div className="text-xs text-gray-400">SCORE</div>
                 </div>
                 <div>
-                  <div>{combo}</div>
-                  <div>コンボ</div>
+                  <div className="text-2xl font-bold text-green-400">{combo}</div>
+                  <div className="text-xs text-gray-400">COMBO</div>
                 </div>
                 <div>
-                  <div>{maxCombo}</div>
-                  <div>最大コンボ</div>
+                  <div className="text-2xl font-bold text-blue-400">{maxCombo}</div>
+                  <div className="text-xs text-gray-400">MAX COMBO</div>
                 </div>
                 <div>
-                  <div>#{myRank}</div>
-                  <div>順位</div>
+                  <div className="text-2xl font-bold text-purple-400">#{myRank}</div>
+                  <div className="text-xs text-gray-400">RANK</div>
                 </div>
               </div>
+            </Card>
 
-              {/* 入力履歴 */}
-              <div>
-                <h3>📜 入力履歴</h3>
-                <div>
-                  {words.map((word, index) => (
-                    <span
-                      key={index}
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </div>
+            {/* Word History */}
+            <Card>
+              <h3 className="text-cyan-400 font-bold mb-3">📜 Word History</h3>
+              <div className="flex flex-wrap gap-2">
+                {words.map((word, index) => (
+                  <span
+                    key={index}
+                    className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-sm border border-green-700"
+                  >
+                    {word}
+                  </span>
+                ))}
+                {words.length === 0 && (
+                  <span className="text-gray-500 text-sm">No words typed yet...</span>
+                )}
               </div>
-            </div>
+            </Card>
           </div>
 
-          {/* サイドバー */}
-          <div>
-            {/* リーダーボード */}
-            <div>
-              <h3>🏆 リーダーボード</h3>
-              <div>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {/* Leaderboard */}
+            <Card>
+              <h3 className="text-yellow-400 font-bold mb-3">🏆 Leaderboard</h3>
+              <div className="space-y-2">
                 {players.map((player, index) => (
                   <div
                     key={player.id}
+                    className="flex justify-between items-center p-2 bg-gray-900/50 rounded border border-gray-700"
                   >
-                    <div>
-                      <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-yellow-600 rounded-full flex items-center justify-center text-xs font-bold text-black">
                         {player.rank}
                       </div>
-                      <span>{player.name}</span>
+                      <span className="text-green-300 text-sm">{player.name}</span>
                     </div>
-                    <span>{player.score}</span>
+                    <span className="text-yellow-400 font-bold text-sm">{player.score}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            {/* ゲーム情報 */}
-            <div>
-              <h3>ℹ️ ゲーム情報</h3>
-              <div>
-                <div>
-                  <span>ルーム:</span>
-                  <span>{currentRoom?.id?.slice(-6) || 'N/A'}</span>
+            {/* Game Info */}
+            <Card>
+              <h3 className="text-cyan-400 font-bold mb-3">ℹ️ Game Info</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Room:</span>
+                  <span className="text-yellow-400 font-mono">{currentRoom?.id?.slice(-6) || 'N/A'}</span>
                 </div>
-                <div>
-                  <span>プレイヤー:</span>
-                  <span>{user?.name || user?.id?.slice(-6) || 'N/A'}</span>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Player:</span>
+                  <span className="text-green-400">{user?.name || user?.id?.slice(-6) || 'N/A'}</span>
                 </div>
-                <div>
-                  <span>辞書:</span>
-                  <span>{itTerms.length}件</span>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Dictionary:</span>
+                  <span className="text-blue-400">{itTerms.length} terms</span>
                 </div>
-                <div>
-                  <span>ターン:</span>
-                  <span>{currentTurn?.sequenceNumber || 0}</span>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Turn:</span>
+                  <span className="text-purple-400">#{currentTurn?.sequenceNumber || 0}</span>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>
