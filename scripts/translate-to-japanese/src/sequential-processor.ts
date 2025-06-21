@@ -4,9 +4,11 @@ import {
   TranslatedLanguage, 
   BatchResult, 
   TranslationError,
-  TranslationWarning 
+  TranslationWarning,
+  DifficultyError
 } from './types';
 import { GeminiClient } from './gemini-client';
+import { DifficultyEvaluator } from './difficulty-evaluator';
 
 /**
  * 同期・逐次処理エンジン
@@ -14,16 +16,24 @@ import { GeminiClient } from './gemini-client';
  */
 export class SequentialProcessor {
   private geminiClient: GeminiClient;
+  private difficultyEvaluator: DifficultyEvaluator;
   private rateLimitDelay: number;
   private progressBar: cliProgress.SingleBar;
+  private difficultyEvaluationEnabled: boolean;
 
-  constructor(geminiClient: GeminiClient, rateLimitDelay: number = 5000) {
+  constructor(
+    geminiClient: GeminiClient, 
+    rateLimitDelay: number = 5000,
+    difficultyEvaluationEnabled: boolean = false
+  ) {
     this.geminiClient = geminiClient;
+    this.difficultyEvaluator = new DifficultyEvaluator(geminiClient);
     this.rateLimitDelay = rateLimitDelay;
+    this.difficultyEvaluationEnabled = difficultyEvaluationEnabled;
     
     // プログレスバーの設定
     this.progressBar = new cliProgress.SingleBar({
-      format: '🔄 翻訳進行中 |{bar}| {percentage}% | {value}/{total} | ETA: {eta}s | 経過: {duration}s',
+      format: '🔄 処理進行中 |{bar}| {percentage}% | {value}/{total} | ETA: {eta}s | 経過: {duration}s',
       barCompleteChar: '█',
       barIncompleteChar: '░',
       hideCursor: true
@@ -61,10 +71,33 @@ export class SequentialProcessor {
           language.summary
         );
         
+        // 認知度評価（有効時のみ）
+        let difficulty: number | undefined;
+        if (this.difficultyEvaluationEnabled) {
+          try {
+            console.log(`📊 ${language.name} の認知度を評価中...`);
+            difficulty = await this.difficultyEvaluator.evaluateDifficulty(
+              language.name,
+              language.summary
+            );
+            console.log(`✅ ${language.name}: 認知度レベル ${difficulty}`);
+            
+            // 認知度評価後も待機
+            if (i < languages.length - 1) {
+              console.log(`⏱️  次の処理まで${this.rateLimitDelay/1000}秒待機...`);
+              await this.sleep(this.rateLimitDelay);
+            }
+          } catch (difficultyError) {
+            console.warn(`⚠️  ${language.name} の認知度評価に失敗:`, difficultyError);
+            difficulty = undefined; // 評価失敗時は未定義
+          }
+        }
+        
         // 成功の場合
         results.push({
           ...language,
-          japaneseSummary
+          japaneseSummary,
+          difficulty
         });
         
         successCount++;
@@ -85,15 +118,16 @@ export class SequentialProcessor {
         // エラーでも基本データは保持
         results.push({
           ...language,
-          japaneseSummary: '翻訳エラー'
+          japaneseSummary: '翻訳エラー',
+          difficulty: undefined
         });
       }
       
       processedCount++;
       this.progressBar.update(processedCount);
       
-      // 最後の要素以外は待機
-      if (i < languages.length - 1) {
+      // 最後の要素以外は待機（認知度評価が無効な場合のみ）
+      if (i < languages.length - 1 && !this.difficultyEvaluationEnabled) {
         console.log(`⏱️  次の翻訳まで${this.rateLimitDelay/1000}秒待機...`);
         await this.sleep(this.rateLimitDelay);
       }

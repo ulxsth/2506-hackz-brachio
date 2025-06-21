@@ -14,6 +14,25 @@ export interface ProgrammingLanguage {
  */
 export interface TranslatedLanguage extends ProgrammingLanguage {
   japaneseSummary: string;
+  difficulty?: number; // 1-5段階の認知度評価 (オプション)
+}
+
+/**
+ * 認知度評価レベル定義
+ */
+export interface DifficultyLevel {
+  level: 1 | 2 | 3 | 4 | 5;
+  description: string;
+}
+
+/**
+ * 認知度評価エラーの詳細
+ */
+export interface DifficultyError {
+  name: string;
+  error: string;
+  timestamp: string;
+  retryCount: number;
 }
 
 /**
@@ -58,6 +77,12 @@ export interface ProcessingStats {
   endTime: string;
   errors: TranslationError[];
   warnings: TranslationWarning[];
+  // 認知度評価統計
+  successfulDifficultyEvaluations?: number;
+  failedDifficultyEvaluations?: number;
+  difficultyEvaluationRate?: number;
+  difficultyDistribution?: Record<number, number>; // レベル別の件数
+  difficultyErrors?: DifficultyError[];
 }
 
 /**
@@ -88,6 +113,8 @@ export interface TranslationConfig {
   maxRetries: number;
   testMode: boolean;
   testLimit: number;
+  // 認知度評価設定
+  difficultyEvaluationEnabled: boolean;
 }
 
 /**

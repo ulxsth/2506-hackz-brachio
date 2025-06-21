@@ -77,6 +77,7 @@ export class CsvProcessor {
         { id: 'wikipediaTitle', title: 'wikipediaTitle' },
         { id: 'summary', title: 'summary' },
         { id: 'japaneseSummary', title: 'japaneseSummary' },
+        { id: 'difficulty', title: 'difficulty' },
         { id: 'categories', title: 'categories' },
         { id: 'year', title: 'year' }
       ],

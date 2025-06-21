@@ -122,7 +122,8 @@ class TranslationApp {
       rateLimitDelay: parseInt(process.env.RATE_LIMIT_DELAY || '1000'),
       maxRetries: parseInt(process.env.MAX_RETRIES || '3'),
       testMode: process.env.TEST_MODE === 'true' || process.argv.includes('--test'),
-      testLimit: parseInt(process.env.TEST_LIMIT || '10')
+      testLimit: parseInt(process.env.TEST_LIMIT || '10'),
+      difficultyEvaluationEnabled: process.env.DIFFICULTY_EVALUATION_ENABLED === 'true'
     };
   }
 
@@ -149,6 +150,8 @@ class TranslationApp {
     console.log(`- 出力ディレクトリ: ${this.config.outputDir}`);
     console.log(`- バッチサイズ: ${this.config.batchSize}`);
     console.log(`- レート制限: ${this.config.rateLimitDelay}ms`);
+    console.log(`- 認知度評価: ${this.config.difficultyEvaluationEnabled ? '有効' : '無効'}`);
+    console.log(`- レート制限: ${this.config.rateLimitDelay}ms`);
     console.log(`- 最大リトライ: ${this.config.maxRetries}回`);
   }
 
@@ -162,7 +165,11 @@ class TranslationApp {
       this.config.rateLimitDelay, 
       this.config.maxRetries
     );
-    this.sequentialProcessor = new SequentialProcessor(this.geminiClient, this.config.rateLimitDelay);
+    this.sequentialProcessor = new SequentialProcessor(
+      this.geminiClient, 
+      this.config.rateLimitDelay,
+      this.config.difficultyEvaluationEnabled
+    );
     this.outputManager = new OutputManager(this.config.outputDir);
   }
 

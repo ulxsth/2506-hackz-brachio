@@ -1,33 +1,124 @@
-# 📋 デュアルターンシステム実装計画書
+# 実装計画 📋
 
-## 🎯 概要
-通常のタイピングゲームのターン（単語を与え、それをタイピングする）と、制約から単語を与えるターン（制約を与え、それに沿った単語をこたえる）の両方をランダム（感覚的に 5:1 程度）に出すシステムの実装。
+## 概要
+段階的な翻訳・認知度評価システムの改良
 
-## 📊 仕様サマリー
-- **通常ターン (83%)**: 提示されたIT用語を正確にタイピング
-- **制約ターン (17%)**: 指定文字を含むIT用語を考えて入力
-- **ターン切り替え**: 各回答後にランダム決定 (`Math.random() < 0.83`)
-- **得点計算の分離**: ターンタイプ別の異なる計算式
+## 📋 仕様変更: 段階的処理とレジューム機能の実装 🔄
+
+### 🎯 新しい目的
+1. **効率化**: 既に処理済みのデータをスキップ
+2. **中断対応**: 途中終了しても再開可能  
+3. **メモリ最適化**: 定期的な書き出しでメモリを解放
+4. **コスト削減**: 不要なAPI呼び出しを削減
 
 ---
 
-## 🗂️ 関連ファイルパス
+## ✅ 前回完了: 認知度評価システム実装
 
-### フロントエンドコア
-- `frontend/app/game/page.tsx` - メインゲームロジック
-- `frontend/lib/room.ts` - ルーム管理・API処理
-- `frontend/hooks/useRoom.ts` - ルーム状態管理フック
-- `frontend/lib/game-sync.ts` - ゲーム同期システム
-- `frontend/hooks/useGameSync.ts` - ゲーム同期フック
+### 🎯 目的
+- ITタイピングゲームでの難易度調整に使用
+- プログラミング言語の知名度に基づく1-4段階評価
+- 既存の翻訳パイプラインに統合
 
-### データベース・スキーマ
-- `supabase/migrations/20250619_unified_schema.sql` - 現在のスキーマ
-- `frontend/lib/database.types.ts` - 型定義ファイル
+### � 関連ファイルパス
 
-### 既存ゲームロジック
-- `frontend/lib/supabase.ts` - Supabase設定
-- `frontend/app/result/page.tsx` - 結果画面
-- `frontend/app/debug/test-data/page.tsx` - テストデータ生成
+#### 修正対象ファイル
+- `/scripts/translate-to-japanese/src/types.ts` - 認知度関連の型定義追加
+- `/scripts/translate-to-japanese/src/sequential-processor.ts` - 認知度評価処理統合
+- `/scripts/translate-to-japanese/src/csv-processor.ts` - CSV出力に認知度カラム追加
+- `/scripts/translate-to-japanese/src/output-manager.ts` - 統計情報に認知度情報追加
+- `/scripts/translate-to-japanese/.env` - 認知度評価設定追加
+
+#### 新規作成ファイル
+- `/scripts/translate-to-japanese/src/difficulty-evaluator.ts` - 認知度評価専用モジュール
+- `/scripts/translate-to-japanese/prompts/difficulty-evaluation.md` - プロンプトテンプレート
+
+### 🔄 実装ステップ
+
+#### Phase 1: 型定義とデータモデル
+1. **types.ts**: 認知度関連の型定義追加
+   - `DifficultyLevel` インターフェース
+   - `TranslatedLanguage` に `difficulty` フィールド追加
+   - 認知度評価用の警告・エラー型
+
+#### Phase 2: 認知度評価モジュール
+2. **difficulty-evaluator.ts**: 認知度評価専用モジュール作成
+   - Gemini APIへの認知度評価リクエスト
+   - プロンプトテンプレート適用
+   - 1-4段階の数値パース処理
+
+3. **prompts/difficulty-evaluation.md**: プロンプト設計
+   - 日本語での認知度評価指示
+   - 1-4段階の明確な基準提示
+   - 安定した出力形式
+
+#### Phase 3: パイプライン統合
+4. **sequential-processor.ts**: 認知度評価処理統合
+   - 翻訳処理後に認知度評価を実行
+   - エラーハンドリング強化
+   - 進捗表示対応
+
+5. **.env設定**: 認知度評価の有効/無効設定
+   - `DIFFICULTY_EVALUATION_ENABLED` フラグ追加
+
+#### Phase 4: 出力対応
+6. **csv-processor.ts**: CSV出力に認知度カラム追加
+   - `difficulty` カラム追加
+   - ヘッダー更新
+
+7. **output-manager.ts**: 統計情報に認知度データ追加
+   - 認知度分布統計
+   - 評価成功率
+
+### 🚫 実装制約
+- **最小限の変更**: 既存の翻訳機能に影響しない
+- **オプション機能**: 設定で有効/無効を切り替え可能
+- **エラー継続**: 認知度評価失敗時も翻訳結果は保持
+- **レート制限**: 既存のレート制限を維持
+
+### 📊 期待される出力
+- CSV出力に `difficulty` カラム（1-4の数値）
+- 統計情報に認知度分布データ
+- エラーログに認知度評価失敗情報
+
+### 💰 コスト増加分析
+
+#### Gemini API使用量比較
+**現在（翻訳のみ）**:
+- 612件 × 1回API呼び出し = **612リクエスト**
+- 平均入力トークン: ~150トークン/リクエスト
+- 平均出力トークン: ~20トークン/リクエスト
+- **総計**: 約92,000入力 + 12,000出力トークン
+
+**追加後（翻訳 + 認知度評価）**:
+- 612件 × 2回API呼び出し = **1,224リクエスト**
+- 翻訳: 612 × (150入力 + 20出力)トークン
+- 認知度: 612 × (50入力 + 5出力)トークン
+- **総計**: 約125,000入力 + 15,000出力トークン
+
+#### 料金試算（Gemini 1.5 Flash-8B）
+**Free Tier**:
+- 現在: $0（無料枠内）
+- 追加後: $0（無料枠内、RPM制限で処理時間増）
+
+**Paid Tier**:
+- 現在: 約$0.01（翻訳のみ）
+- 追加後: 約$0.015（+50%増）
+- **増加分**: +$0.005（約0.5円）
+
+#### 処理時間比較
+**現在**:
+- 612件 × 5秒間隔 = **約51分**
+
+**追加後**:
+- 1,224リクエスト × 5秒間隔 = **約102分**
+- **増加**: +51分（2倍）
+
+#### リソース使用量
+**API使用量**: +100%（リクエスト数2倍）
+**処理時間**: +100%（約2倍）
+**料金**: +50%（認知度評価は軽量）
+**メモリ使用量**: +5%（追加フィールド分のみ）
 
 ### 辞書・データ管理
 - 現在：Supabaseクエリベース (`it_terms`テーブル)
@@ -68,169 +159,6 @@ CREATE INDEX idx_game_sessions_turn_type ON public.game_sessions(current_turn_ty
 CREATE INDEX idx_word_submissions_turn_type ON public.word_submissions(turn_type);
 CREATE INDEX idx_word_submissions_target_word ON public.word_submissions(target_word);
 ```
-
-### Phase 2: ゲームロジック拡張 🎮
-
-#### 2.1 ターン管理システム
-- **ファイル**: `frontend/lib/turn-manager.ts` (新規作成)
-- **機能**: ターンタイプ決定、単語選択、制約生成
-- **内容**:
-  ```typescript
-  export interface TurnData {
-    type: 'typing' | 'constraint'
-    targetWord?: string        // 通常ターン用
-    constraintChar?: string    // 制約ターン用
-    coefficient: number        // 得点係数
-    startTime: Date
-  }
-  
-  export class TurnManager {
-    generateNextTurn(previousTurns: TurnData[]): TurnData
-    selectRandomWord(): Promise<string>
-    generateConstraintChar(): { char: string; coefficient: number }
-    calculateSpeedCoefficient(duration: number): number
-  }
-  ```
-
-#### 2.2 得点計算システム更新
-- **ファイル**: `frontend/lib/scoring.ts` (修正)
-- **機能**: ターン別得点計算ロジック
-- **内容**:
-  ```typescript
-  interface ScoringParams {
-    turnType: 'typing' | 'constraint'
-    word: string
-    difficulty: number
-    coefficient: number // 速度係数 or 制約係数
-    combo: number
-  }
-  
-  export const calculateScore = (params: ScoringParams): number => {
-    const baseScore = params.word.length
-    
-    switch (params.turnType) {
-      case 'typing':
-        // 通常ターン: 単語文字数 × 難易度 × 速度係数 × コンボ
-        return baseScore * params.difficulty * params.coefficient * params.combo
-      case 'constraint':
-        // 制約ターン: 単語文字数 × 難易度 × 制約係数 × コンボ
-        return baseScore * params.difficulty * params.coefficient * params.combo
-    }
-  }
-  ```
-
-#### 2.3 タイピング測定システム
-- **ファイル**: `frontend/hooks/useTypingTimer.ts` (新規作成)
-- **機能**: タイピング開始時間記録、完了時間測定、速度係数計算
-- **内容**:
-  ```typescript
-  export const useTypingTimer = () => {
-    const [startTime, setStartTime] = useState<Date | null>(null)
-    
-    const startTimer = () => setStartTime(new Date())
-    const finishTimer = (): { duration: number; coefficient: number } => {
-      if (!startTime) return { duration: 0, coefficient: 1.0 }
-      
-      const duration = Date.now() - startTime.getTime()
-      const coefficient = calculateSpeedCoefficient(duration)
-      
-      return { duration, coefficient }
-    }
-  }
-  ```
-
-### Phase 3: UI・UX実装 🎨
-
-#### 3.1 ゲーム画面更新
-- **ファイル**: `frontend/app/game/page.tsx` (大幅修正)
-- **機能**: ターン別UI表示、入力処理分岐
-- **変更内容**:
-  ```typescript
-  // 現在のターン状態管理
-  const [currentTurn, setCurrentTurn] = useState<TurnData | null>(null)
-  
-  // ターン別UI表示
-  const renderTurnUI = () => {
-    if (!currentTurn) return null
-    
-    switch (currentTurn.type) {
-      case 'typing':
-        return <TypingTurnUI targetWord={currentTurn.targetWord} />
-      case 'constraint':
-        return <ConstraintTurnUI constraintChar={currentTurn.constraintChar} />
-    }
-  }
-  ```
-
-#### 3.2 ターン別UIコンポーネント
-- **ファイル**: `frontend/components/TypingTurnUI.tsx` (新規作成)
-- **機能**: 通常ターン専用UI（単語表示、タイピング入力）
-- **ファイル**: `frontend/components/ConstraintTurnUI.tsx` (新規作成)
-- **機能**: 制約ターン専用UI（制約表示、パスボタン）
-
-#### 3.3 フィードバック・結果表示更新
-- ターン別の成功・失敗メッセージ
-- 得点計算式の表示（透明性向上）
-- タイピング速度の可視化
-
-### Phase 4: データ同期・API拡張 🔄
-
-#### 4.1 ルーム状態管理拡張
-- **ファイル**: `frontend/lib/room.ts` (修正)
-- **機能**: ターンデータの同期、状態更新API
-- **新規API**:
-  ```typescript
-  export const startNewTurn = async (roomId: string, turnData: TurnData)
-  export const submitTurnResult = async (params: TurnSubmissionParams)
-  export const syncTurnState = async (roomId: string)
-  ```
-
-#### 4.2 リアルタイム同期拡張
-- **ファイル**: `frontend/lib/game-sync.ts` (修正)
-- **機能**: ターン切り替え通知、状態同期
-- **拡張内容**:
-  - ターン開始イベント
-  - プレイヤー回答完了通知
-  - 次ターン準備通知
-
-### Phase 5: 辞書・パフォーマンス最適化 ⚡
-
-#### 5.1 単語選択最適化
-- **対象**: 通常ターン用の単語選択
-- **方式**: 事前に選定された単語プールからランダム選択
-- **条件**: 
-  - 適切な難易度分布
-  - タイピング練習に適した長さ（3-15文字）
-  - よく知られたIT用語優先
-
-#### 5.2 制約チェック高速化
-- **対象**: 制約ターンの文字包含チェック
-- **方式**: 既存のSupabaseクエリ継続使用
-- **将来の最適化**: 文字インデックス事前構築
-
----
-
-## ✅ テスト項目
-
-### 単体テスト
-- [ ] ターン生成ロジック（83%:17%の比率確認）
-- [ ] 得点計算（両ターンタイプ）
-- [ ] タイピング速度測定精度
-- [ ] 制約チェック正確性
-
-### 統合テスト
-- [ ] ターン切り替えフロー
-- [ ] マルチプレイヤー同期
-- [ ] データベース一貫性
-- [ ] リアルタイム通信
-
-### ユーザビリティテスト
-- [ ] UI切り替えのスムーズさ
-- [ ] 指示の明確性
-- [ ] フィードバックの適切性
-- [ ] パフォーマンス（レスポンス時間）
-
----
 
 ## 🚀 実装優先度
 

@@ -206,6 +206,104 @@ export class GeminiClient {
   }
 
   /**
+   * プログラミング言語の認知度を評価
+   */
+  async evaluateDifficulty(
+    languageName: string, 
+    summary: string
+  ): Promise<number> {
+    const prompt = this.buildDifficultyPrompt(languageName, summary);
+    
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        console.log(`📊 ${languageName} の認知度を評価中... (試行 ${attempt}/${this.maxRetries})`);
+        
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        // 認知度レベルをパース
+        const difficulty = this.parseDifficultyFromResponse(text);
+        
+        console.log(`✅ ${languageName}: 認知度レベル ${difficulty}`);
+        
+        // レート制限対応
+        if (attempt < this.maxRetries) {
+          await this.sleep(this.rateLimitDelay);
+        }
+        
+        return difficulty;
+        
+      } catch (error) {
+        console.warn(`⚠️  ${languageName} の認知度評価に失敗 (試行 ${attempt}/${this.maxRetries}):`, error);
+        
+        // 429エラー専用処理
+        if (error && typeof error === 'object' && 'status' in error && error.status === 429) {
+          const errorDetails = (error as any).errorDetails;
+          const retryInfo = errorDetails?.find((detail: any) => 
+            detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+          );
+          
+          const retryDelaySeconds = retryInfo?.retryDelay?.replace('s', '');
+          const waitTime = retryDelaySeconds ? 
+            parseInt(retryDelaySeconds) * 1000 : 
+            30000; // デフォルト30秒
+            
+          console.log(`⏰ 429エラー: ${waitTime/1000}秒待機...`);
+          await this.sleep(waitTime);
+        } else {
+          // 通常のエクスポネンシャルバックオフ
+          const backoffDelay = this.rateLimitDelay * Math.pow(2, attempt - 1);
+          await this.sleep(backoffDelay);
+        }
+        
+        if (attempt === this.maxRetries) {
+          throw new Error(`認知度評価失敗: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+    }
+    
+    throw new Error('最大試行回数に達しました');
+  }
+
+  /**
+   * 認知度評価用のプロンプトを構築
+   */
+  private buildDifficultyPrompt(languageName: string, summary: string): string {
+    return `あなたは技術専門家です。以下のプログラミング言語の一般的な認知度を1-5段階で評価してください：
+
+言語名: ${languageName}
+概要: ${summary}
+
+評価基準:
+1 = 超有名（JavaScript、Python、Java等）- 多くの開発者が知っている
+2 = 有名（TypeScript、Go、Rust等）- IT業界では広く知られている  
+3 = 普通（Scala、Erlang、F#等）- 専門分野では使われている
+4 = 専門的（Prolog、Forth、APL等）- 特定の用途でのみ使用
+5 = マニアック（Brainfuck、Malbolge等）- 非常に限定的な認知度
+
+回答は数字のみで答えてください。例: 3`;
+  }
+
+  /**
+   * Geminiのレスポンスから認知度レベルを抽出
+   */
+  private parseDifficultyFromResponse(response: string): number {
+    // 数字のみを抽出
+    const match = response.match(/[1-5]/);
+    if (match) {
+      const level = parseInt(match[0]);
+      if (level >= 1 && level <= 5) {
+        return level;
+      }
+    }
+    
+    // パースに失敗した場合はデフォルト値（普通）を返す
+    console.warn(`⚠️  認知度レベルのパースに失敗、デフォルト値3を使用: "${response}"`);
+    return 3;
+  }
+
+  /**
    * 待機関数
    */
   private sleep(ms: number): Promise<void> {
