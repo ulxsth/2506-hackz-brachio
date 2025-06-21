@@ -66,7 +66,7 @@ export default function GamePageMVP() {
   const { startTimer, finishTimer, resetTimer, startTime } = useTypingTimer();
 
   // ゲーム基本状態
-  const [timeLeft, setTimeLeft] = useState(300); // 5分
+  const [timeLeft, setTimeLeft] = useState(300);
   const [currentInput, setCurrentInput] = useState('');
   const [myScore, setMyScore] = useState(0);
   const [myRank, setMyRank] = useState(1);
