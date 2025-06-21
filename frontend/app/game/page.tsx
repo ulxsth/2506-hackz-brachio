@@ -14,6 +14,25 @@ import type { Database } from '@/lib/database.types';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
 
+// RPC関数の戻り値の型定義
+interface StartGameSessionResult {
+  success: boolean;
+  phase: string;
+  actual_start_time: string;
+  session_id: string;
+}
+
+// 型ガード関数
+function isStartGameSessionResult(data: unknown): data is StartGameSessionResult {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'session_id' in data &&
+    'success' in data &&
+    typeof (data as any).session_id === 'string'
+  );
+}
+
 interface Player {
   id: string;
   name: string;
@@ -86,9 +105,14 @@ export default function GamePageMVP() {
               hostId: currentRoom.host_id
             });
             
-            if (result.success && result.data?.session_id) {
+            if (result.success && result.data) {
               console.log('✅ ゲームセッション開始成功', result.data);
-              setGameSessionId(result.data.session_id);
+              // result.dataはRPC関数から返されるJSONオブジェクト
+              if (isStartGameSessionResult(result.data)) {
+                setGameSessionId(result.data.session_id);
+              } else {
+                console.error('❌ 予期しないデータ形式', result.data);
+              }
             } else {
               console.error('❌ ゲームセッション開始失敗', result.error);
             }
