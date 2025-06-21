@@ -15,7 +15,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ children }) => {
       maxWidth="100vw"
       maxHeight="100vh"
       enable={{ top: true, right: true, bottom: true, left: true, topRight: true, bottomRight: true, bottomLeft: true, topLeft: true }}
-      className="bg-terminalBg text-terminalText font-mono text-base md:text-lg rounded-lg shadow-lg border border-terminalBorder flex flex-col p-0 resize overflow-auto"
+      className="bg-terminalBg text-terminalText font-mono text-base md:text-lg rounded-lg shadow-lg border border-terminalBorder flex flex-col p-0 resize overflow-auto hide-scrollbar"
       style={{ margin: "auto" }}
     >
       {/* ウィンドウヘッダー */}
@@ -28,7 +28,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ children }) => {
         </div>
       </div>
       {/* 一枚板のターミナル内容 */}
-      <div className="flex-1 overflow-y-auto p-4 hide-horizonal-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 hide-scrollbar">
         {children}
       </div>
     </Resizable>

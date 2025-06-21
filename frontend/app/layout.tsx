@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable} w-screen h-screen flex items-center justify-center bg-terminalBg`}>
         <JotaiProvider>
           <div className="w-screen h-screen flex items-center justify-center bg-terminalBg">

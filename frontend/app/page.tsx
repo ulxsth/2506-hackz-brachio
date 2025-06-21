@@ -44,7 +44,7 @@ export default function Home() {
   };
 
   return (
-    <div className="overflow-x-auto min-w-max w-full h-full">
+    <div className="overflow-x-auto min-w-max w-full h-full hide-scrollbar">
       {/* ターミナル風コマンド履歴 */}
       <div className="mb-4">
         <div className="flex items-center gap-2">

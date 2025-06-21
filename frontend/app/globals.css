@@ -45,15 +45,28 @@ a {
   }
 }
 
-/* 横スクロールバーを非表示にするユーティリティ */
-.hide-horizonal-scrollbar {
+/* 縦スクロールバーを非表示にするユーティリティ */
+.hide-scrollbar {
+  
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE, Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+
+/* スクロールバーを非表示にするユーティリティ */
+.hide-scrollbar {
   scrollbar-width: none;
   /* Firefox */
   -ms-overflow-style: none;
   /* IE, Edge */
 }
 
-.hide-horizonal-scrollbar::-webkit-scrollbar {
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari, Opera */
 }
