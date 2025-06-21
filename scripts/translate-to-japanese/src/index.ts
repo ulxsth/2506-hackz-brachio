@@ -3,7 +3,7 @@ import * as path from 'path';
 import { TranslationConfig } from './types';
 import { CsvProcessor } from './csv-processor';
 import { GeminiClient } from './gemini-client';
-import { BatchProcessor } from './batch-processor';
+import { SequentialProcessor } from './sequential-processor';
 import { OutputManager } from './output-manager';
 
 // 環境変数の読み込み
@@ -16,7 +16,7 @@ class TranslationApp {
   private config: TranslationConfig;
   private csvProcessor!: CsvProcessor;
   private geminiClient!: GeminiClient;
-  private batchProcessor!: BatchProcessor;
+  private sequentialProcessor!: SequentialProcessor;
   private outputManager!: OutputManager;
 
   constructor() {
@@ -60,8 +60,8 @@ class TranslationApp {
       // Step 2: 翻訳処理
       console.log('\n🔄 Step 2: 翻訳処理');
       const { results, stats } = this.config.testMode
-        ? await this.batchProcessor.processTestBatch(targetLanguages, this.config.testLimit)
-        : await this.batchProcessor.processAll(targetLanguages);
+        ? await this.sequentialProcessor.processAll(targetLanguages.slice(0, this.config.testLimit))
+        : await this.sequentialProcessor.processAll(targetLanguages);
 
       // Step 3: 結果の保存
       console.log('\n💾 Step 3: 結果保存');
@@ -162,7 +162,7 @@ class TranslationApp {
       this.config.rateLimitDelay, 
       this.config.maxRetries
     );
-    this.batchProcessor = new BatchProcessor(this.geminiClient, this.config.batchSize);
+    this.sequentialProcessor = new SequentialProcessor(this.geminiClient, this.config.rateLimitDelay);
     this.outputManager = new OutputManager(this.config.outputDir);
   }
 

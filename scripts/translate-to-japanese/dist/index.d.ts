@@ -2,7 +2,7 @@ declare class TranslationApp {
     private config;
     private csvProcessor;
     private geminiClient;
-    private batchProcessor;
+    private sequentialProcessor;
     private outputManager;
     constructor();
     run(): Promise<void>;

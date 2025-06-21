@@ -7,7 +7,7 @@ class GeminiClient {
     model;
     rateLimitDelay;
     maxRetries;
-    constructor(apiKey, rateLimitDelay = 1000, maxRetries = 3) {
+    constructor(apiKey, rateLimitDelay = 5000, maxRetries = 5) {
         this.genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
         this.model = this.genAI.getGenerativeModel({
             model: "gemini-1.5-flash-8b",
@@ -39,11 +39,23 @@ class GeminiClient {
             }
             catch (error) {
                 console.warn(`⚠️  ${languageName} の翻訳に失敗 (試行 ${attempt}/${this.maxRetries}):`, error);
+                if (error && typeof error === 'object' && 'status' in error && error.status === 429) {
+                    const errorDetails = error.errorDetails;
+                    const retryInfo = errorDetails?.find((detail) => detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+                    const retryDelaySeconds = retryInfo?.retryDelay?.replace('s', '');
+                    const waitTime = retryDelaySeconds ?
+                        parseInt(retryDelaySeconds) * 1000 :
+                        30000;
+                    console.log(`⏰ 429エラー: ${waitTime / 1000}秒待機...`);
+                    await this.sleep(waitTime);
+                }
+                else {
+                    const backoffDelay = this.rateLimitDelay * Math.pow(2, attempt - 1);
+                    await this.sleep(backoffDelay);
+                }
                 if (attempt === this.maxRetries) {
                     throw new Error(`翻訳失敗: ${error instanceof Error ? error.message : String(error)}`);
                 }
-                const backoffDelay = this.rateLimitDelay * Math.pow(2, attempt - 1);
-                await this.sleep(backoffDelay);
             }
         }
         throw new Error('最大試行回数に達しました');

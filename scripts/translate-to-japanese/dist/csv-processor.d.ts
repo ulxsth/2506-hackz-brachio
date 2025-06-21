@@ -1,4 +1,4 @@
-import { ProgrammingLanguage, TranslatedLanguage } from './types.js';
+import { ProgrammingLanguage, TranslatedLanguage } from './types';
 export declare class CsvProcessor {
     private inputPath;
     private outputDir;

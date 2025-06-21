@@ -39,16 +39,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TranslationApp = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 const path = __importStar(require("path"));
-const csv_processor_js_1 = require("./csv-processor.js");
-const gemini_client_js_1 = require("./gemini-client.js");
-const batch_processor_js_1 = require("./batch-processor.js");
-const output_manager_js_1 = require("./output-manager.js");
+const csv_processor_1 = require("./csv-processor");
+const gemini_client_1 = require("./gemini-client");
+const sequential_processor_1 = require("./sequential-processor");
+const output_manager_1 = require("./output-manager");
 dotenv_1.default.config();
 class TranslationApp {
     config;
     csvProcessor;
     geminiClient;
-    batchProcessor;
+    sequentialProcessor;
     outputManager;
     constructor() {
         this.config = this.loadConfig();
@@ -75,8 +75,8 @@ class TranslationApp {
             console.log(`🎯 処理対象: ${targetLanguages.length}件`);
             console.log('\n🔄 Step 2: 翻訳処理');
             const { results, stats } = this.config.testMode
-                ? await this.batchProcessor.processTestBatch(targetLanguages, this.config.testLimit)
-                : await this.batchProcessor.processAll(targetLanguages);
+                ? await this.sequentialProcessor.processAll(targetLanguages.slice(0, this.config.testLimit))
+                : await this.sequentialProcessor.processAll(targetLanguages);
             console.log('\n💾 Step 3: 結果保存');
             const csvPath = await this.csvProcessor.writeOutputCsv(results, this.config.outputCsvFilename);
             const statsPath = await this.outputManager.saveStats(results, stats, this.config.outputStatsFilename);
@@ -126,10 +126,10 @@ class TranslationApp {
         console.log(`- 最大リトライ: ${this.config.maxRetries}回`);
     }
     initializeComponents() {
-        this.csvProcessor = new csv_processor_js_1.CsvProcessor(this.config.inputCsvPath, this.config.outputDir);
-        this.geminiClient = new gemini_client_js_1.GeminiClient(this.config.apiKey, this.config.rateLimitDelay, this.config.maxRetries);
-        this.batchProcessor = new batch_processor_js_1.BatchProcessor(this.geminiClient, this.config.batchSize);
-        this.outputManager = new output_manager_js_1.OutputManager(this.config.outputDir);
+        this.csvProcessor = new csv_processor_1.CsvProcessor(this.config.inputCsvPath, this.config.outputDir);
+        this.geminiClient = new gemini_client_1.GeminiClient(this.config.apiKey, this.config.rateLimitDelay, this.config.maxRetries);
+        this.sequentialProcessor = new sequential_processor_1.SequentialProcessor(this.geminiClient, this.config.rateLimitDelay);
+        this.outputManager = new output_manager_1.OutputManager(this.config.outputDir);
     }
     displayFinalSummary(results, stats, outputPaths) {
         const successRate = (stats.successful / stats.processed * 100).toFixed(1);

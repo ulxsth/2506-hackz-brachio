@@ -1,5 +1,5 @@
-import { ProgrammingLanguage, TranslatedLanguage, BatchResult, TranslationError, ProgressInfo } from './types.js';
-import { GeminiClient } from './gemini-client.js';
+import { ProgrammingLanguage, TranslatedLanguage, BatchResult, TranslationError, ProgressInfo } from './types';
+import { GeminiClient } from './gemini-client';
 export declare class BatchProcessor {
     private geminiClient;
     private batchSize;

@@ -1,0 +1,12 @@
+{
+  "totalLanguages": 3,
+  "processedLanguages": 3,
+  "successfulTranslations": 3,
+  "failedTranslations": 0,
+  "successRate": 100,
+  "averageResponseTime": 9367.666666666666,
+  "totalProcessingTime": 28103,
+  "startTime": "2025-06-21T04:31:14.054Z",
+  "endTime": "2025-06-21T04:31:42.157Z",
+  "errors": []
+}

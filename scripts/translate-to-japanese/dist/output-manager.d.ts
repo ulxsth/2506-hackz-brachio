@@ -1,4 +1,4 @@
-import { TranslatedLanguage, BatchResult, TranslationError } from './types.js';
+import { TranslatedLanguage, BatchResult, TranslationError } from './types';
 export declare class OutputManager {
     private outputDir;
     constructor(outputDir: string);

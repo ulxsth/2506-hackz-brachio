@@ -11,7 +11,7 @@ export class GeminiClient {
   private rateLimitDelay: number;
   private maxRetries: number;
 
-  constructor(apiKey: string, rateLimitDelay: number = 1000, maxRetries: number = 3) {
+  constructor(apiKey: string, rateLimitDelay: number = 5000, maxRetries: number = 5) {
     this.genAI = new GoogleGenerativeAI(apiKey);
     // 最もコスト効率の良いGemini 1.5 Flash-8Bを使用
     this.model = this.genAI.getGenerativeModel({ 
@@ -60,13 +60,29 @@ export class GeminiClient {
       } catch (error) {
         console.warn(`⚠️  ${languageName} の翻訳に失敗 (試行 ${attempt}/${this.maxRetries}):`, error);
         
+        // 429エラー専用処理 + retryDelay対応
+        if (error && typeof error === 'object' && 'status' in error && error.status === 429) {
+          const errorDetails = (error as any).errorDetails;
+          const retryInfo = errorDetails?.find((detail: any) => 
+            detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+          );
+          
+          const retryDelaySeconds = retryInfo?.retryDelay?.replace('s', '');
+          const waitTime = retryDelaySeconds ? 
+            parseInt(retryDelaySeconds) * 1000 : 
+            30000; // デフォルト30秒
+            
+          console.log(`⏰ 429エラー: ${waitTime/1000}秒待機...`);
+          await this.sleep(waitTime);
+        } else {
+          // 通常のエクスポネンシャルバックオフ
+          const backoffDelay = this.rateLimitDelay * Math.pow(2, attempt - 1);
+          await this.sleep(backoffDelay);
+        }
+        
         if (attempt === this.maxRetries) {
           throw new Error(`翻訳失敗: ${error instanceof Error ? error.message : String(error)}`);
         }
-        
-        // エクスポネンシャルバックオフ
-        const backoffDelay = this.rateLimitDelay * Math.pow(2, attempt - 1);
-        await this.sleep(backoffDelay);
       }
     }
     
