@@ -66,6 +66,12 @@ export class WanaKanaValidator {
    * IT用語辞書を更新
    */
   updateTerms(itTerms: ITTermData[]): void {
+    console.log('🔍 WanaKanaValidator.updateTerms呼び出し:', {
+      newTermsLength: itTerms.length,
+      currentTermsLength: this.itTerms.length,
+      newTermsFirst3: itTerms.slice(0, 3).map(t => t.display_text)
+    });
+    
     this.itTerms = itTerms;
     this.buildHiraganaMap();
   }

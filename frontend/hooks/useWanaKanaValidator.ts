@@ -41,6 +41,11 @@ export function useWanaKanaValidator({
 
   // IT用語辞書の更新
   useEffect(() => {
+    console.log('🔍 WanaKanaValidator用語更新:', {
+      itTermsLength: itTerms.length,
+      itTermsFirst3: itTerms.slice(0, 3).map(t => t.display_text),
+      validator: !!validator
+    });
     validator.updateTerms(itTerms);
   }, [validator, itTerms]);
 

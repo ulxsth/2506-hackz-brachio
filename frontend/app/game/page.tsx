@@ -60,6 +60,8 @@ interface Player {
  * - タイピング速度測定: WPM/精度追跡
  */
 export default function GamePageMVP() {
+  console.log('🎮 GamePageMVP コンポーネント初期化開始');
+  
   const router = useRouter();
   const { user, currentRoom, forceEndGame } = useRoom();
   const { startTimer, finishTimer, resetTimer, startTime } = useTypingTimer();
@@ -162,23 +164,54 @@ export default function GamePageMVP() {
 
   // IT用語辞書の読み込み
   useEffect(() => {
+    console.log('🔍 useEffect(IT用語読み込み)実行開始');
+    
     const loadItTerms = async () => {
       try {
+        console.log('🔍 IT用語データ読み込み開始...');
+        console.log('🔍 Supabase接続確認:', !!supabase);
+        
         const { data, error } = await supabase
           .from('it_terms')
           .select('*')
           .limit(1000);
         
-        if (error) throw error;
+        console.log('🔍 Supabaseクエリ結果:', { data: !!data, error, dataLength: data?.length });
+        
+        if (error) {
+          console.error('❌ Supabaseクエリエラー:', error);
+          throw error;
+        }
         
         setItTerms(data || []);
         console.log(`📚 辞書読み込み完了: ${data?.length || 0}件`);
+        
+        // デバッグ: 最初の数件のdescriptionを確認
+        if (data && data.length > 0) {
+          console.log('🔍 最初の3件のdescription確認:', 
+            data.slice(0, 3).map(term => ({
+              word: term.display_text,
+              description: term.description,
+              descriptionType: typeof term.description,
+              descriptionLength: term.description?.length
+            }))
+          );
+        } else {
+          console.warn('⚠️ IT用語データが空です！');
+        }
       } catch (error) {
         console.error('❌ 辞書読み込み失敗:', error);
+        if (error instanceof Error) {
+          console.error('❌ エラー詳細:', error.message);
+        }
       }
     };
     
     loadItTerms();
+    
+    return () => {
+      console.log('🔍 useEffect(IT用語読み込み)クリーンアップ');
+    };
   }, []);
 
   // 初回ターン生成
@@ -220,7 +253,18 @@ export default function GamePageMVP() {
     e.preventDefault();
     const word = currentInput.trim();
     
-    if (!word || !user || !currentRoom || !currentTurn) return;
+    console.log('🔍 handleInputSubmit開始:', {
+      word,
+      itTermsLength: itTerms.length,
+      hasUser: !!user,
+      hasCurrentRoom: !!currentRoom,
+      hasCurrentTurn: !!currentTurn
+    });
+    
+    if (!word || !user || !currentRoom || !currentTurn) {
+      console.log('⚠️ 処理条件不足でリターン');
+      return;
+    }
 
     // タイピング測定終了
     const { duration, coefficient } = finishTimer();
@@ -232,10 +276,23 @@ export default function GamePageMVP() {
     let matchedTerm: ITTerm | null = null;
 
     // マッチした用語を特定
+    console.log('🔍 用語マッチング開始:', {
+      isValid,
+      validationMatchedTerm: validation.matchedTerm,
+      itTermsLength: itTerms.length,
+      itTermsFirst3: itTerms.slice(0, 3).map(t => t.display_text)
+    });
+    
     if (isValid && validation.matchedTerm) {
       matchedTerm = itTerms.find(term => 
         term.display_text === validation.matchedTerm
       ) || null;
+      
+      console.log('🔍 用語マッチング結果:', {
+        searchTerm: validation.matchedTerm,
+        foundTerm: matchedTerm?.display_text,
+        foundDescription: matchedTerm?.description
+      });
     }
 
     // 制約ターンの追加検証
@@ -249,6 +306,12 @@ export default function GamePageMVP() {
         matchedTerm = null;
       }
     }
+
+    console.log('🔍 正解処理条件チェック:', {
+      isValid,
+      matchedTerm: matchedTerm?.display_text,
+      willExecuteCorrectLogic: isValid && matchedTerm
+    });
 
     if (isValid && matchedTerm) {
       // 正解処理
@@ -278,6 +341,14 @@ export default function GamePageMVP() {
       }
       
       // 単語説明を表示
+      console.log('🔍 説明表示デバッグ:', {
+        word: matchedTerm.display_text,
+        description: matchedTerm.description,
+        descriptionType: typeof matchedTerm.description,
+        descriptionLength: matchedTerm.description?.length,
+        fullTerm: matchedTerm
+      });
+      
       setExplanation({
         word: matchedTerm.display_text,
         description: matchedTerm.description || '説明がありません',
@@ -596,7 +667,9 @@ export default function GamePageMVP() {
                     <p>獲得: {explanation.score}点 ({explanation.combo}コンボ)</p>
                   </div>
                   <div>
-                    <p>{explanation.description}</p>
+                    <p>説明内容: "{explanation.description}"</p>
+                    <p>説明の長さ: {explanation.description?.length || 0}文字</p>
+                    <p>説明の型: {typeof explanation.description}</p>
                   </div>
                 </div>
               )}
