@@ -79,7 +79,7 @@ npx supabase db pull                         # リモートスキーマを取得
 
 ```
 categories        -- IT用語カテゴリーマスター
-difficulties      -- 難易度レベルマスター  
+difficulties      -- 難易度レベルマスター
 rooms             -- ルーム管理
 room_players      -- ルーム参加プレイヤー (旧: players)
 game_sessions     -- ゲームセッション管理
@@ -89,7 +89,7 @@ it_terms          -- IT用語辞書（正規化版）
 
 ### 主な変更点 📋
 
-1. **テーブル正規化**: 
+1. **テーブル正規化**:
    - `it_terms.category` → `categories` テーブル + `category_id` FK
    - `it_terms.difficulty` → `difficulties` テーブル + `difficulty_id` FK
    - `it_terms.aliases[]` カラム削除（とりあえず不要）
@@ -109,9 +109,13 @@ psql postgresql://postgres:postgres@localhost:54322/postgres -c "\dt"
 
 ---
 
+## 🏗️ Infrastructure
+- **Frontend**: Vercel (Next.js deployment)
+- **Database**: Supabase (PostgreSQL + Realtime)
+
 ## 📚 Documentation
 
 - [Supabase Setup Guide](./docs/supabase-setup.md) - Supabase詳細設定
-- [Supabase CLI Setup](./docs/supabase-cli-setup.md) - CLI導入手順  
+- [Supabase CLI Setup](./docs/supabase-cli-setup.md) - CLI導入手順
 - [Requirements](./docs/requirements.md) - 要件定義
 - [Roadmap](./docs/roadmap.md) - 開発ロードマップ
