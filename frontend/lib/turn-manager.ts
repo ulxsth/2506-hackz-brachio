@@ -107,14 +107,16 @@ export class TurnManager {
 
   /**
    * ランダムな単語を選択（通常ターン用）
+   * 注意: romaji_textカラムは削除済み。display_textのみを使用し、
+   * WanaKanaでローマ字変換は動的に行う予定
    */
   private async selectRandomWord(): Promise<string> {
     debugLog('📚 ランダム単語選択開始')
     
-    // 適度な長さの単語を優先選択（3-12文字）
+    // display_textのみを取得（WanaKana導入後にローマ字変換予定）
     const { data, error } = await supabase
       .from('it_terms')
-      .select('romaji_text, display_text')
+      .select('display_text')
       .gte('difficulty_id', 1)
       .lte('difficulty_id', 7) // 極端に難しい単語は避ける
       .limit(50) // 候補を50個取得してランダム選択
@@ -128,20 +130,17 @@ export class TurnManager {
       throw new Error('単語が見つかりません')
     }
     
-    // 3-12文字の単語を優先的にフィルタリング
-    const preferredWords = data.filter(term => 
-      term.romaji_text.length >= 3 && term.romaji_text.length <= 12
-    )
-    
-    const candidateWords = preferredWords.length > 0 ? preferredWords : data
-    const selectedWord = candidateWords[Math.floor(Math.random() * candidateWords.length)]
+    // TODO: WanaKana導入後、display_textからローマ字変換して長さフィルタリング
+    // 現在は全ての候補からランダム選択
+    const selectedWord = data[Math.floor(Math.random() * data.length)]
     
     debugLog('✅ ランダム単語選択完了', { 
-      word: selectedWord.romaji_text, 
       display: selectedWord.display_text 
     })
     
-    return selectedWord.romaji_text
+    // TODO: WanaKana導入後、ここでtoRomaji変換を行う
+    // 暫定的にdisplay_textをそのまま返す（日本語）
+    return selectedWord.display_text
   }
 
   /**

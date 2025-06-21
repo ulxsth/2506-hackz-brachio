@@ -8,9 +8,30 @@ import { submitWord, updatePlayerScore, startGame } from '@/lib/room';
 import { TurnManager, type TurnData } from '@/lib/turn-manager';
 import { calculateScore } from '@/lib/scoring';
 import { useTypingTimer } from '@/hooks/useTypingTimer';
+import { TypingInput } from '@/components/TypingInput';
+import { useWanaKanaValidator } from '@/hooks/useWanaKanaValidator';
 import type { Database } from '@/lib/database.types';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
+
+// RPC関数の戻り値の型定義
+interface StartGameSessionResult {
+  success: boolean;
+  phase: string;
+  actual_start_time: string;
+  session_id: string;
+}
+
+// 型ガード関数
+function isStartGameSessionResult(data: unknown): data is StartGameSessionResult {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'session_id' in data &&
+    'success' in data &&
+    typeof (data as any).session_id === 'string'
+  );
+}
 
 interface Player {
   id: string;
@@ -51,6 +72,13 @@ export default function GamePageMVP() {
   const [turnManager, setTurnManager] = useState<TurnManager | null>(null);
   const [currentTurn, setCurrentTurn] = useState<TurnData | null>(null);
   
+  // WanaKana検証システム
+  const wanaKanaValidator = useWanaKanaValidator({
+    itTerms: itTerms,
+    targetWord: currentTurn?.type === 'typing' ? currentTurn.targetWord : undefined,
+    constraintChar: currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined
+  });
+  
   // プレイヤー情報（モック）
   const [players, setPlayers] = useState<Player[]>([
     { id: 'player-1', name: 'あなた', score: 0, rank: 1 },
@@ -77,9 +105,14 @@ export default function GamePageMVP() {
               hostId: currentRoom.host_id
             });
             
-            if (result.success && result.data?.session_id) {
+            if (result.success && result.data) {
               console.log('✅ ゲームセッション開始成功', result.data);
-              setGameSessionId(result.data.session_id);
+              // result.dataはRPC関数から返されるJSONオブジェクト
+              if (isStartGameSessionResult(result.data)) {
+                setGameSessionId(result.data.session_id);
+              } else {
+                console.error('❌ 予期しないデータ形式', result.data);
+              }
             } else {
               console.error('❌ ゲームセッション開始失敗', result.error);
             }
@@ -161,33 +194,35 @@ export default function GamePageMVP() {
   // 単語提出処理
   const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const word = currentInput.toLowerCase().trim();
+    const word = currentInput.trim();
     
     if (!word || !user || !currentRoom || !currentTurn) return;
 
     // タイピング測定終了
     const { duration, coefficient } = finishTimer();
 
-    let isValid = false;
+    // WanaKana検証システムを使用
+    const validation = wanaKanaValidator.validateInput(word);
+    let isValid = validation.isValid;
     let points = 0;
     let matchedTerm: ITTerm | null = null;
 
-    // ターン種別による検証
-    if (currentTurn.type === 'typing') {
-      // 通常ターン: 提示された単語との完全一致
-      if (currentTurn.targetWord && word === currentTurn.targetWord.toLowerCase()) {
-        matchedTerm = itTerms.find(term => 
-          term.romaji_text.toLowerCase() === currentTurn.targetWord?.toLowerCase()
-        ) || null;
-        isValid = !!matchedTerm;
-      }
-    } else if (currentTurn.type === 'constraint') {
-      // 制約ターン: 指定文字を含み、辞書に存在する単語
-      if (currentTurn.constraintChar && word.includes(currentTurn.constraintChar)) {
-        matchedTerm = itTerms.find(term => 
-          term.romaji_text.toLowerCase() === word
-        ) || null;
-        isValid = !!matchedTerm;
+    // マッチした用語を特定
+    if (isValid && validation.matchedTerm) {
+      matchedTerm = itTerms.find(term => 
+        term.display_text === validation.matchedTerm
+      ) || null;
+    }
+
+    // 制約ターンの追加検証
+    if (currentTurn.type === 'constraint' && currentTurn.constraintChar && isValid) {
+      // 制約文字が含まれているかの確認
+      const constraintHiragana = validation.hiraganaPreview;
+      const constraintCharHiragana = wanaKanaValidator.validator.validateInput(currentTurn.constraintChar).hiraganaPreview;
+      
+      if (!constraintHiragana.includes(constraintCharHiragana)) {
+        isValid = false;
+        matchedTerm = null;
       }
     }
 
@@ -453,30 +488,40 @@ export default function GamePageMVP() {
                 )}
               </div>
 
-              {/* 入力フォーム */}
+              {/* WanaKanaリアルタイム入力フォーム */}
               <form onSubmit={handleInputSubmit}>
                 <div>
-                  <input
+                  <TypingInput
                     ref={inputRef}
-                    type="text"
                     value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
+                    onChange={setCurrentInput}
+                    onSubmit={() => handleInputSubmit({ preventDefault: () => {} } as React.FormEvent)}
                     onFocus={() => startTimer()}
-                    placeholder="単語を入力してください..."
-                    autoComplete="off"
+                    itTerms={itTerms}
+                    targetWord={currentTurn?.type === 'typing' ? currentTurn.targetWord : undefined}
+                    constraintChar={currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined}
+                    placeholder={
+                      currentTurn?.type === 'typing' 
+                        ? `「${currentTurn.targetWord}」を入力してください...`
+                        : currentTurn?.type === 'constraint'
+                        ? `「${currentTurn.constraintChar}」を含むIT用語を入力...`
+                        : '単語を入力してください...'
+                    }
+                    showPreview={true}
+                    showSuggestions={currentTurn?.type === 'constraint'}
                   />
-                  <button
-                    type="submit"
-                  >
-                    送信
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handlePass}
-                    disabled={!canPass}
-                  >
-                    {passCountdown > 0 ? `${passCountdown}s` : 'パス'}
-                  </button>
+                  <div>
+                    <button type="submit">
+                      送信
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePass}
+                      disabled={!canPass}
+                    >
+                      {passCountdown > 0 ? `${passCountdown}s` : 'パス'}
+                    </button>
+                  </div>
                 </div>
               </form>
 

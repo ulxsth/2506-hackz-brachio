@@ -20,7 +20,8 @@
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
