@@ -14,6 +14,16 @@ import type { Database } from '@/lib/database.types';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
 
+// 単語説明表示用の型定義
+interface WordExplanation {
+  word: string;
+  description: string;
+  difficulty: number;
+  score: number;
+  combo: number;
+  isVisible: boolean;
+}
+
 // RPC関数の戻り値の型定義
 interface StartGameSessionResult {
   success: boolean;
@@ -67,6 +77,9 @@ export default function GamePageMVP() {
   const [itTerms, setItTerms] = useState<ITTerm[]>([]);
   const [canPass, setCanPass] = useState(true);
   const [passCountdown, setPassCountdown] = useState(0);
+  
+  // 単語説明表示用State
+  const [explanation, setExplanation] = useState<WordExplanation | null>(null);
   
   // ターンシステム
   const [turnManager, setTurnManager] = useState<TurnManager | null>(null);
@@ -135,6 +148,17 @@ export default function GamePageMVP() {
     
     initializeGame();
   }, [currentRoom?.id, user?.id]);
+
+  // 説明自動消去タイマー
+  useEffect(() => {
+    if (explanation?.isVisible) {
+      const timer = setTimeout(() => {
+        setExplanation(null);
+      }, 5000); // 5秒後に自動消去
+      
+      return () => clearTimeout(timer);
+    }
+  }, [explanation]);
 
   // IT用語辞書の読み込み
   useEffect(() => {
@@ -253,6 +277,16 @@ export default function GamePageMVP() {
         setFeedback(`✅ 正解！「${matchedTerm.display_text}」 +${points}点 (${newCombo}コンボ) [制約係数×${currentTurn.coefficient}]`);
       }
       
+      // 単語説明を表示
+      setExplanation({
+        word: matchedTerm.display_text,
+        description: matchedTerm.description || '説明がありません',
+        difficulty: matchedTerm.difficulty_id,
+        score: points,
+        combo: newCombo,
+        isVisible: true
+      });
+      
       // データベースに記録
       try {
         console.log('🔍 DB記録処理開始:', { gameSessionId, userId: user?.id });
@@ -340,6 +374,23 @@ export default function GamePageMVP() {
     setFeedback('⏭️ パス！次のターンです');
     setTimeout(() => setFeedback(''), 3000);
   };
+
+  // 説明を手動で閉じる機能
+  const handleCloseExplanation = () => {
+    setExplanation(null);
+  };
+
+  // Escキーで説明を閉じる機能
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && explanation?.isVisible) {
+        handleCloseExplanation();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [explanation]);
 
   // ゲーム終了処理
   const handleEndGame = async () => {
@@ -529,6 +580,24 @@ export default function GamePageMVP() {
               {feedback && (
                 <div>
                   <div>{feedback}</div>
+                </div>
+              )}
+
+              {/* 単語説明表示エリア */}
+              {explanation && explanation.isVisible && (
+                <div>
+                  <div>
+                    <h4>📖 単語説明</h4>
+                    <button onClick={handleCloseExplanation}>×</button>
+                  </div>
+                  <div>
+                    <h5>「{explanation.word}」</h5>
+                    <p>難易度: {explanation.difficulty}</p>
+                    <p>獲得: {explanation.score}点 ({explanation.combo}コンボ)</p>
+                  </div>
+                  <div>
+                    <p>{explanation.description}</p>
+                  </div>
                 </div>
               )}
 
