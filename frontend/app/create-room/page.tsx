@@ -119,18 +119,12 @@ export default function CreateRoomPage() {
                 value={timeLimit.toString()}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTimeLimit(Number(e.target.value))}
               >
-                <optgroup label="🧪 テスト用（短時間）">
-                  <option value={0.5}>30秒</option>
-                  <option value={1}>1分</option>
-                </optgroup>
-                <optgroup label="⚡ ショートゲーム">
-                  <option value={3}>3分</option>
-                </optgroup>
-                <optgroup label="🎮 通常ゲーム">
-                  <option value={5}>5分</option>
-                  <option value={10}>10分</option>
-                  <option value={15}>15分</option>
-                </optgroup>
+                <option value={0.5}>30秒</option>
+                <option value={1}>1分</option>
+                <option value={3}>3分</option>
+                <option value={5}>5分</option>
+                <option value={10}>10分</option>
+                <option value={15}>15分</option>
               </Select>
 
               <Input
@@ -158,7 +152,6 @@ export default function CreateRoomPage() {
                   <p>• あいことば: <span className="text-terminalAccent">{roomCode || '未設定'}</span></p>
                   <p>• 制限時間: <span className="text-terminalAccent">
                     {timeLimit < 1 ? `${timeLimit * 60}秒` : `${timeLimit}分`}
-                    {timeLimit <= 1 && <span className="text-yellow-400"> (テスト用)</span>}
                   </span></p>
                   <p>• 最大人数: <span className="text-terminalAccent">{maxPlayers}人</span></p>
                 </div>
