@@ -2,7 +2,7 @@
 
 /**
  * 翻訳済みプログラミング言語データをit_termsテーブルに挿入するスクリプト
- * 
+ *
  * 使用方法:
  * cd /home/yotu/github/2506-hackz-brachio
  * node scripts/insert-translated-data.js
@@ -32,15 +32,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 function parseCSV(csvContent) {
   const lines = csvContent.trim().split('\n');
   const headers = lines[0].split(',').map(h => h.trim());
-  
+
   return lines.slice(1).map(line => {
     const values = [];
     let currentValue = '';
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
+
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -52,12 +52,12 @@ function parseCSV(csvContent) {
     }
     // 最後の値を追加
     values.push(currentValue.trim());
-    
+
     const obj = {};
     headers.forEach((header, index) => {
       obj[header] = values[index] || '';
     });
-    
+
     return obj;
   });
 }
@@ -71,14 +71,14 @@ function convertToItTerms(languageData) {
     .map(item => {
       // 難易度設定（CSVの数値を使用、デフォルトは3）
       let difficultyId = 3; // デフォルト: 中級
-      
+
       if (item.difficulty) {
         const diff = parseInt(item.difficulty);
         if (diff >= 1 && diff <= 4) {
           difficultyId = diff;
         }
       }
-      
+
       // 説明文：日本語説明 + 英語説明の組み合わせ
       let description = '';
       if (item.japaneseSummary && item.japaneseSummary.trim()) {
@@ -91,7 +91,7 @@ function convertToItTerms(languageData) {
           description = item.summary.trim();
         }
       }
-      
+
       return {
         display_text: item.name.trim(),
         description: description || null,
@@ -106,88 +106,141 @@ function convertToItTerms(languageData) {
 async function main() {
   try {
     console.log('🚨 it_termsテーブルを初期化します（全件削除）...');
-    const { error: deleteError } = await supabase.from('it_terms').delete().neq('id', 0);
+    const { error: deleteError } = await supabase.from('it_terms').delete().gte('id', '00000000-0000-0000-0000-000000000000');
     if (deleteError) {
       console.error('❌ it_termsテーブル初期化エラー:', deleteError);
       throw deleteError;
     }
     console.log('🗑️  it_termsテーブル初期化完了！');
-    
+
     console.log('🚀 翻訳済みデータの挿入を開始します...');
-    
-    // CSVファイルを読み込み
-    const csvPath = path.join(__dirname, 'translate-to-japanese/output/programming-languages-ja.csv');
-    console.log('📁 CSVファイルパス:', csvPath);
-    
-    if (!fs.existsSync(csvPath)) {
-      console.error('❌ CSVファイルが見つかりません:', csvPath);
+
+    // バッチCSVファイルを読み込み
+    const outputDir = path.join(__dirname, 'translate-to-japanese/output');
+    console.log('📁 バッチファイルディレクトリ:', outputDir);
+
+    if (!fs.existsSync(outputDir)) {
+      console.error('❌ 出力ディレクトリが見つかりません:', outputDir);
       process.exit(1);
     }
-    
-    const csvContent = fs.readFileSync(csvPath, 'utf-8');
-    console.log('📊 CSVファイル読み込み完了');
-    
+
+    // バッチファイル一覧を取得
+    const files = fs.readdirSync(outputDir)
+      .filter(file => file.match(/^programming-languages-ja-batch-\d+\.csv$/))
+      .sort((a, b) => {
+        const numA = parseInt(a.match(/batch-(\d+)\.csv$/)[1]);
+        const numB = parseInt(b.match(/batch-(\d+)\.csv$/)[1]);
+        return numA - numB;
+      });
+
+    console.log(`� ${files.length}個のバッチファイルを発見しました`);
+
+    if (files.length === 0) {
+      console.error('❌ バッチファイルが見つかりません');
+      process.exit(1);
+    }
+
+    // 全バッチファイルを順次読み込み・統合
+    let allCsvContent = '';
+    let headerAdded = false;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const filePath = path.join(outputDir, file);
+
+      console.log(`📄 バッチファイル読み込み中... (${i + 1}/${files.length}): ${file}`);
+
+      try {
+        const batchContent = fs.readFileSync(filePath, 'utf-8').trim();
+
+        if (!batchContent) {
+          console.warn(`⚠️  空のファイルをスキップ: ${file}`);
+          continue;
+        }
+
+        const lines = batchContent.split('\n');
+
+        if (!headerAdded) {
+          // 最初のファイルのヘッダーを含める
+          allCsvContent = batchContent;
+          headerAdded = true;
+        } else {
+          // 2番目以降はヘッダーを除いて追加
+          const dataLines = lines.slice(1);
+          if (dataLines.length > 0 && dataLines[0].trim()) {
+            allCsvContent += '\n' + dataLines.join('\n');
+          }
+        }
+
+      } catch (error) {
+        console.error(`❌ バッチファイル読み込みエラー (${file}):`, error.message);
+        process.exit(1);
+      }
+    }
+
+    console.log('✅ 全バッチファイル読み込み・統合完了');
+
     // CSVを解析
-    const languageData = parseCSV(csvContent);
+    const languageData = parseCSV(allCsvContent);
     console.log(`🔍 ${languageData.length}件のデータを解析しました`);
-    
+
     // it_terms形式に変換
     const itTermsData = convertToItTerms(languageData);
     console.log(`✅ ${itTermsData.length}件のit_terms形式データを準備しました`);
-    
+
     // 既存データの確認
     const { data: existingTerms, error: fetchError } = await supabase
       .from('it_terms')
       .select('display_text');
-    
+
     if (fetchError) {
       console.error('❌ 既存データの取得エラー:', fetchError);
       throw fetchError;
     }
-    
+
     const existingNames = new Set(existingTerms.map(term => term.display_text));
     console.log(`📋 既存のit_terms: ${existingNames.size}件`);
-    
+
     // 重複を除外
     const newTermsData = itTermsData.filter(term => !existingNames.has(term.display_text));
     console.log(`🆕 新規追加対象: ${newTermsData.length}件`);
-    
+
     if (newTermsData.length === 0) {
       console.log('ℹ️  追加する新しいデータがありません');
       return;
     }
-    
+
     // データを分割して挿入（大量データ対応）
     const BATCH_SIZE = 100;
     let insertedCount = 0;
-    
+
     for (let i = 0; i < newTermsData.length; i += BATCH_SIZE) {
       const batch = newTermsData.slice(i, i + BATCH_SIZE);
-      
+
       console.log(`🔄 バッチ挿入中... (${i + 1}-${Math.min(i + BATCH_SIZE, newTermsData.length)}/${newTermsData.length})`);
-      
+
       const { data, error } = await supabase
         .from('it_terms')
         .insert(batch)
         .select();
-      
+
       if (error) {
         console.error('❌ バッチ挿入エラー:', error);
         console.error('エラー発生時のバッチ:', batch.slice(0, 3)); // 最初の3件だけ表示
         throw error;
       }
-      
+
       insertedCount += data?.length || 0;
       console.log(`✅ バッチ挿入完了: ${data?.length || 0}件`);
     }
-    
+
     console.log(`🎉 データ挿入完了！`);
     console.log(`📊 統計:`);
     console.log(`   - 処理対象: ${languageData.length}件`);
     console.log(`   - 変換後: ${itTermsData.length}件`);
     console.log(`   - 既存除外: ${itTermsData.length - newTermsData.length}件`);
     console.log(`   - 新規挿入: ${insertedCount}件`);
-    
+
   } catch (error) {
     console.error('💥 処理中にエラーが発生しました:', error);
     process.exit(1);

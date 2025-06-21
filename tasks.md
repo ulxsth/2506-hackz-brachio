@@ -1,50 +1,43 @@
-
----
-
-# ターミナルUIウィンドウ「幅・高さ可変化」実装計画
+# Supabase it_termsテーブル「複数バッチCSVファイル統合」データ投入スクリプト 実装計画
 
 ## 目的
-- ターミナルUIウィンドウ部分（layout.tsx内）の幅・高さをユーザーがドラッグで可変にできるようにする
-- 初期表示は画面の8割サイズ・中央配置
-- TailwindCSSのみで実装する案と、`re-resizable`等のライブラリ利用案の2パターンを検討
+- translate-to-japanese/output/内に分割された複数のバッチCSVファイルを統合して読み込み
+- it_termsテーブルの初期化後、すべてのバッチデータを順次投入する
+- 現在の単一ファイル読み込みから、バッチファイル群（programming-languages-ja-batch-*.csv）読み込みへ変更
 
 ---
 
 ## 関連ファイル
-- frontend/app/layout.tsx（ウィンドウ本体・ヘッダー・全体レイアウト）
-- frontend/app/globals.css（カスタムCSS追加時）
-- frontend/tailwind.config.js（必要に応じてカスタムクラス追加）
-- frontend/package.json（ライブラリ導入時）
+- scripts/insert-translated-data.js（投入スクリプト本体）
+- scripts/translate-to-japanese/output/programming-languages-ja-batch-*.csv（610個のバッチファイル）
 
 ---
 
 ## 実装方針
-### 1. TailwindCSSのみで実装する場合
-- `resize`クラス（`resize-x`, `resize-y`, `resize`）と`overflow-auto`を利用
-- ウィンドウ本体divに`resize`と`overflow-auto`を付与
-- `min-w-[300px] max-w-[100vw] min-h-[200px] max-h-[100vh]`等で最小/最大サイズを制御
-- 初期サイズは`w-4/5 h-4/5`で中央配置
-- スマホ・タブレット時は`resize-none`で固定化も検討
-
-### 2. ライブラリ（re-resizable等）を使う場合
-- `re-resizable`をインストールし、ウィンドウ本体を`Resizable`でラップ
-- `defaultSize`で初期サイズ指定、`minWidth`/`maxWidth`等で制御
-- `onResize`でサイズ変更時の挙動を制御
-- スマホ・タブレット時は`enable`でリサイズ無効化
+1. 単一CSVファイル読み込み処理を「複数バッチファイル読み込み」に変更
+   - `programming-languages-ja.csv` → `programming-languages-ja-batch-*.csv` (batch-1〜610)
+   - globパターンまたはfs.readdirでバッチファイル一覧を取得
+   - 各バッチファイルを順次読み込み・パース・統合してから一括処理
+2. 進捗表示の改善
+   - バッチファイル読み込み進捗（例：「バッチ1/610を読み込み中...」）
+   - 統合後のデータ件数表示
+3. エラーハンドリング
+   - 個別バッチファイルの読み込みエラー時の詳細ログ
+   - 欠損バッチファイルの検出・警告
 
 ---
 
-## 不明点・要検討事項
-- スマホ・タブレット時のリサイズ可否（ユーザビリティ観点で要検討）
-- ウィンドウサイズを状態管理する必要性（今後の拡張性）
-- ライブラリ導入のパフォーマンス・バンドルサイズ影響
-- ウィンドウ外クリック時の挙動（今は不要）
+## 注意点
+- 610個のファイルを順次読み込むため処理時間が増加
+- メモリ使用量の増加に注意（必要に応じてストリーミング処理検討）
 
 ---
 
 ## 参考
-- docs/reports/20250621_terminal-window-resize-investigation.md（調査レポート）
+- scripts/translate-to-japanese/output/（分割されたバッチファイル群）
+- 現状のinsert-translated-data.js（単一ファイル読み込み）
 
 ---
 
 # この計画に従い、実装フェーズで具体的なコード修正を行う
+
