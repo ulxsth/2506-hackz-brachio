@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
+import { Button, Card } from '@/components/ui';
 
 interface PlayerResult {
   id: string;
@@ -153,171 +154,187 @@ function ResultPageContent() {
 
   if (loading) {
     return (
-      <div>
-        <div>
-          <div>
-            <div></div>
-            <h2>結果を集計中...</h2>
-            <p>しばらくお待ちください</p>
+      <div className="min-h-screen bg-black text-green-400 font-mono flex items-center justify-center">
+        <Card>
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <h2 className="text-lg font-bold text-cyan-400">Calculating results...</h2>
+            <p className="text-green-300 text-sm">Please wait a moment</p>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div>
-        <div>
-          <div>⚠️</div>
-          <h2>エラーが発生しました</h2>
-          <p>{error}</p>
-          <p>※ ダミーデータで表示しています</p>
-          <button
+      <div className="min-h-screen bg-black text-green-400 font-mono flex items-center justify-center">
+        <Card className="bg-red-900/20 border-red-500 text-center">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h2 className="text-lg font-bold text-red-400 mb-2">Error occurred</h2>
+          <p className="text-red-300 text-sm mb-2">{error}</p>
+          <p className="text-yellow-400 text-xs mb-4">※ Showing fallback data</p>
+          <Button
             onClick={() => router.push('/menu')}
+            variant="secondary"
           >
-            メニューに戻る
-          </button>
-        </div>
+            Back to Menu
+          </Button>
+        </Card>
       </div>
     );
   }
 
   if (!myResult) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-black text-green-400 font-mono flex items-center justify-center">
+        <Card>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+            <span>Loading...</span>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div>
-        {/* ヘッダー */}
-        <div>
-          <div>
-            <h1>🎮 ゲーム結果 🎮</h1>
-            <div>
-              <span>ゲーム終了！</span>
+    <div className="min-h-screen bg-black text-green-400 font-mono p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
+              🎮 <span className="text-cyan-400">game-results</span> 🎮
+            </h1>
+            <div className="text-green-300 mt-2">
+              <span className="bg-green-900/30 px-3 py-1 rounded border border-green-700">Game Complete!</span>
             </div>
           </div>
         </div>
 
-        {/* 勝者の表示 */}
-        <div>
-          <div>
-            <div>{getRankIcon(1)}</div>
-            <h2>優勝者</h2>
-            <div>
+        {/* Winner Display */}
+        <Card className="text-center bg-gradient-to-r from-yellow-900/20 to-yellow-800/20 border-yellow-500">
+          <div className="space-y-3">
+            <div className="text-6xl">{getRankIcon(1)}</div>
+            <h2 className="text-2xl font-bold text-yellow-400">🏆 WINNER 🏆</h2>
+            <div className="text-xl font-bold text-yellow-300">
               🎉 {results[0]?.name} 🎉
             </div>
-            <div>
-              最終得点: <span>{results[0]?.score}</span>点
+            <div className="text-lg">
+              Final Score: <span className="text-yellow-400 font-bold">{results[0]?.score}</span> pts
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* 最終順位表 */}
-        <div>
-          <h3>最終順位</h3>
-          <div>
+        {/* Final Rankings */}
+        <Card>
+          <h3 className="text-xl font-bold text-cyan-400 mb-4">📊 Final Rankings</h3>
+          <div className="space-y-3">
             {results.map((player, index) => (
               <div
                 key={player.id}
+                className={`flex items-center justify-between p-3 rounded border ${
+                  player.name === 'あなた' || player.name === myResult.name 
+                    ? 'bg-blue-900/30 border-blue-500' 
+                    : 'bg-gray-900/50 border-gray-700'
+                }`}
               >
-                <div>
-                  <div>
-                    <span>{player.rank}</span>
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-gradient-to-r ${getRankColor(player.rank)}`}>
+                    <span className="text-black">{player.rank}</span>
                   </div>
                   <div>
-                    <div>
-                      <span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-green-300">
                         {player.name}
                       </span>
-                      {player.name === 'あなた' && (
-                        <span>
+                      {(player.name === 'あなた' || player.name === myResult.name) && (
+                        <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
                           YOU
                         </span>
                       )}
                     </div>
-                    <div>
-                      {player.wordCount}語 • 最高{player.maxCombo}コンボ • 正解率{player.accuracy}%
+                    <div className="text-sm text-gray-400">
+                      {player.wordCount} words • {player.maxCombo} max combo • {player.accuracy}% accuracy
                     </div>
                   </div>
                 </div>
-                <div>
-                  <div>{player.score}</div>
-                  <div>点</div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-yellow-400">{player.score}</div>
+                  <div className="text-xs text-gray-400">pts</div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
-        {/* あなたの詳細統計 */}
-        <div>
-          <h3>あなたの詳細統計</h3>
-          <div>
-            <div>
-              <div>
-                <div>最終得点</div>
-                <div>{myResult.score}</div>
-                <div>pts</div>
-              </div>
-              <div>
-                <div>入力した単語数</div>
-                <div>{myResult.wordCount}</div>
-                <div>語</div>
-              </div>
+        {/* Your Detailed Stats */}
+        <Card>
+          <h3 className="text-xl font-bold text-yellow-400 mb-4">📈 Your Detailed Stats</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-gray-900/50 rounded border border-gray-700">
+              <div className="text-xs text-gray-400 mb-1">Final Score</div>
+              <div className="text-2xl font-bold text-yellow-400">{myResult.score}</div>
+              <div className="text-xs text-gray-400">pts</div>
             </div>
-            <div>
-              <div>
-                <div>最高コンボ</div>
-                <div>{myResult.maxCombo}</div>
-                <div>連続</div>
-              </div>
-              <div>
-                <div>正解率</div>
-                <div>{myResult.accuracy}%</div>
-                <div>accuracy</div>
-              </div>
+            <div className="text-center p-3 bg-gray-900/50 rounded border border-gray-700">
+              <div className="text-xs text-gray-400 mb-1">Words Typed</div>
+              <div className="text-2xl font-bold text-green-400">{myResult.wordCount}</div>
+              <div className="text-xs text-gray-400">words</div>
+            </div>
+            <div className="text-center p-3 bg-gray-900/50 rounded border border-gray-700">
+              <div className="text-xs text-gray-400 mb-1">Max Combo</div>
+              <div className="text-2xl font-bold text-purple-400">{myResult.maxCombo}</div>
+              <div className="text-xs text-gray-400">streak</div>
+            </div>
+            <div className="text-center p-3 bg-gray-900/50 rounded border border-gray-700">
+              <div className="text-xs text-gray-400 mb-1">Accuracy</div>
+              <div className="text-2xl font-bold text-blue-400">{myResult.accuracy}%</div>
+              <div className="text-xs text-gray-400">correct</div>
             </div>
           </div>
-          <div>
-            <div>
-              <div>平均得点/単語</div>
-              <div>
+          <div className="mt-4 text-center">
+            <div className="inline-block p-3 bg-cyan-900/30 rounded border border-cyan-700">
+              <div className="text-xs text-gray-400 mb-1">Average Score/Word</div>
+              <div className="text-xl font-bold text-cyan-400">
                 {myResult.wordCount > 0 ? Math.round(myResult.score / myResult.wordCount) : 0}
               </div>
-              <div>pts/word</div>
+              <div className="text-xs text-gray-400">pts/word</div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* アクションボタン */}
-        <div>
-          <button
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+          <Button
             onClick={handlePlayAgain}
+            className="flex-1 flex items-center justify-center gap-2"
           >
             <span>🔄</span>
-            <span>もう一度遊ぶ</span>
-          </button>
-          <button
+            <span>Play Again</span>
+          </Button>
+          <Button
+            variant="secondary"
             onClick={handleBackToMenu}
+            className="flex-1 flex items-center justify-center gap-2"
           >
             <span>🏠</span>
-            <span>メニューに戻る</span>
-          </button>
+            <span>Back to Menu</span>
+          </Button>
         </div>
 
-        {/* おつかれさまメッセージ */}
-        <div>
-          <div>
+        {/* Congratulations Message */}
+        <Card className="text-center bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-500">
+          <div className="text-lg text-green-300">
             <p>
-              {myResult.rank === 1 ? '🎉 おめでとうございます！素晴らしいタイピングでした！ 🎉' :
-               myResult.rank === 2 ? '🥈 惜しい！次回は1位を目指しましょう！' :
-               myResult.rank === 3 ? '🥉 ナイスゲーム！まだまだ伸びしろがありますね！' :
-               '💪 お疲れ様でした！練習してまた挑戦しましょう！'}
+              {myResult.rank === 1 ? '🎉 Congratulations! Excellent typing skills! 🎉' :
+               myResult.rank === 2 ? '🥈 So close! Aim for 1st place next time!' :
+               myResult.rank === 3 ? '🥉 Nice game! You still have room to grow!' :
+               '💪 Great job! Practice more and try again!'}
             </p>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
@@ -327,14 +344,14 @@ function ResultPageContent() {
 export default function ResultPage() {
   return (
     <Suspense fallback={
-      <div>
-        <div>
-          <div>
-            <div></div>
-            <h2>結果を読み込み中...</h2>
-            <p>しばらくお待ちください</p>
+      <div className="min-h-screen bg-black text-green-400 font-mono flex items-center justify-center">
+        <Card>
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <h2 className="text-lg font-bold text-cyan-400">Loading results...</h2>
+            <p className="text-green-300 text-sm">Please wait a moment</p>
           </div>
-        </div>
+        </Card>
       </div>
     }>
       <ResultPageContent />
