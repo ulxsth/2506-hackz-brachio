@@ -1,0 +1,33 @@
+{
+  "name": "scrape-programming-languages",
+  "version": "1.0.0",
+  "description": "Wikipedia programming languages scraper for IT typing game",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "scrape": "npm run build && node dist/index.js",
+    "scrape:full": "npm run build && node dist/index.js --full",
+    "scrape:update": "npm run build && node dist/index.js --update",
+    "validate": "npm run build && node dist/validator.js",
+    "stats": "npm run build && node dist/stats.js",
+    "clean": "rm -rf dist output/*.json output/*.csv"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "keywords": [
+    "wikipedia",
+    "scraper",
+    "programming-languages",
+    "typing-game"
+  ],
+  "author": "IT Typing Game Team",
+  "license": "MIT"
+}
