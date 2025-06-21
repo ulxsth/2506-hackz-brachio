@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useRoom } from '@/hooks/useRoom';
@@ -49,6 +49,8 @@ interface Player {
   name: string;
   score: number;
   rank: number;
+  combo?: number;
+  is_host?: boolean;
 }
 
 /**
@@ -62,7 +64,7 @@ interface Player {
  */
 export default function GamePageMVP() {
   const router = useRouter();
-  const { user, currentRoom, forceEndGame } = useRoom();
+  const { user, currentRoom, forceEndGame, players } = useRoom();
   const { startTimer, finishTimer, resetTimer, startTime } = useTypingTimer();
 
   // ゲーム基本状態
@@ -92,14 +94,6 @@ export default function GamePageMVP() {
     targetWord: currentTurn?.type === 'typing' ? currentTurn.targetWord : undefined,
     constraintChar: currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined
   });
-
-  // プレイヤー情報（モック）
-  const [players, setPlayers] = useState<Player[]>([
-    { id: 'player-1', name: 'あなた', score: 0, rank: 1 },
-    { id: 'player-2', name: 'タイピング王', score: 120, rank: 2 },
-    { id: 'player-3', name: 'コード忍者', score: 95, rank: 3 },
-    { id: 'player-4', name: 'IT戦士', score: 80, rank: 4 }
-  ]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -529,29 +523,41 @@ export default function GamePageMVP() {
     };
   }, [timeLeft, passCountdown, router]);
 
-  // ランキング更新
-  useEffect(() => {
-    const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-    const updatedPlayers = sortedPlayers.map((player, index) => ({
-      ...player,
-      rank: index + 1
-    }));
-    setPlayers(updatedPlayers);
+  // リアルタイムランキング計算（プレイヤーリストから動的に計算）
+  const rankedPlayers = useMemo(() => {
+    if (!players || players.length === 0) return [];
+    
+    // 自分のスコアを反映したプレイヤーリストを作成
+    const playersWithMyScore = players.map(player => {
+      // 自分（現在のユーザー）のスコアを最新のmyScoreで更新
+      if (user && player.id === user.id) {
+        return { ...player, score: myScore };
+      }
+      return player;
+    });
 
-    const myPlayer = updatedPlayers.find(p => p.name === 'あなた');
-    if (myPlayer) {
-      setMyRank(myPlayer.rank);
+    // スコア順でソートしてランクを付与
+    return playersWithMyScore
+      .sort((a, b) => b.score - a.score)
+      .map((player, index) => ({
+        ...player,
+        rank: index + 1
+      }));
+  }, [players, myScore, user?.id]);
+
+  // 自分のランク計算
+  const myRankCalculated = useMemo(() => {
+    if (!user) return 1;
+    const myPlayer = rankedPlayers.find(p => p.id === user.id);
+    return myPlayer?.rank || 1;
+  }, [rankedPlayers, user?.id]);
+
+  // ランクが変わった時のみmyRankを更新
+  useEffect(() => {
+    if (myRankCalculated !== myRank) {
+      setMyRank(myRankCalculated);
     }
-  }, [players.map(p => p.score).join(',')]);
-
-  // 自分のスコアをプレイヤーリストに反映
-  useEffect(() => {
-    setPlayers(prev => prev.map(player =>
-      player.name === 'あなた'
-        ? { ...player, score: myScore }
-        : player
-    ));
-  }, [myScore]);
+  }, [myRankCalculated, myRank]);
 
   // ゲーム終了チェック
   useEffect(() => {
@@ -752,20 +758,28 @@ export default function GamePageMVP() {
             <Card>
               <h3 className="text-yellow-400 font-bold mb-3">🏆 Leaderboard</h3>
               <div className="space-y-2">
-                {players.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className="flex justify-between items-center p-2 bg-gray-900/50 rounded border border-gray-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-yellow-600 rounded-full flex items-center justify-center text-xs font-bold text-black">
-                        {player.rank}
+                {rankedPlayers.length > 0 ? (
+                  rankedPlayers.map((player, index) => (
+                    <div
+                      key={player.id}
+                      className="flex justify-between items-center p-2 bg-gray-900/50 rounded border border-gray-700"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-yellow-600 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                          {player.rank}
+                        </div>
+                        <span className="text-green-300 text-sm">
+                          {user && player.id === user.id ? 'あなた' : player.name}
+                        </span>
                       </div>
-                      <span className="text-green-300 text-sm">{player.name}</span>
+                      <span className="text-yellow-400 font-bold text-sm">{player.score}</span>
                     </div>
-                    <span className="text-yellow-400 font-bold text-sm">{player.score}</span>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 text-sm py-4">
+                    プレイヤーを読み込み中...
                   </div>
-                ))}
+                )}
               </div>
             </Card>
 
