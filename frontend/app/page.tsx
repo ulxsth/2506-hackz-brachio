@@ -44,78 +44,61 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <div>
-        <div>
-          <h1 className='text-3xl font-bold underline'>TYPE 2 LIVE</h1>
-          <p>ITタイピングゲーム</p>
-        </div>
-
-        <div>
-          <h2>ゲームについて</h2>
-          <div>
-            <div>
-              <p>• 制約条件に沿ったIT用語をタイピング</p>
-              <p>• リアルタイムマルチプレイヤー対戦</p>
-              <p>• コンボで高得点を狙おう！</p>
-              <p>• 最大100人まで同時プレイ可能</p>
+    <div className="w-screen h-screen flex items-center justify-center bg-terminalBg">
+      <div className="bg-terminalBg text-terminalText font-mono rounded-lg shadow-lg border border-terminalBorder w-full max-w-2xl h-[90vh] flex flex-col p-4">
+        {/* スクロール可能な履歴部分 */}
+        <div className="flex-1 overflow-y-auto mb-2">
+          <h1 className="text-2xl font-bold mb-2">TYPE 2 LIVE</h1>
+          <p className="mb-4">ITタイピングゲーム</p>
+          <div className="mb-4">
+            <h2 className="font-semibold mb-1">ゲームについて</h2>
+            <ul className="list-disc list-inside text-sm mb-2">
+              <li>制約条件に沿ったIT用語をタイピング</li>
+              <li>リアルタイムマルチプレイヤー対戦</li>
+              <li>コンボで高得点を狙おう！</li>
+              <li>最大100人まで同時プレイ可能</li>
+            </ul>
+            <div className="mb-2">
+              <span className="font-semibold">IT用語カテゴリー:</span>
+              <ul className="list-disc list-inside ml-4 text-xs">
+                <li>Web開発 (HTML, CSS, React等)</li>
+                <li>データベース (SQL, MongoDB等)</li>
+                <li>AI・機械学習 (Python, TensorFlow等)</li>
+                <li>セキュリティ (SSL, OAuth等)</li>
+                <li>インフラ (AWS, Docker等)</li>
+                <li>プログラミング言語 (Java, C++等)</li>
+              </ul>
             </div>
-            <div>
-              <p>IT用語カテゴリー:</p>
-              <div>
-                <span>• Web開発 (HTML, CSS, React等)</span>
-                <span>• データベース (SQL, MongoDB等)</span>
-                <span>• AI・機械学習 (Python, TensorFlow等)</span>
-                <span>• セキュリティ (SSL, OAuth等)</span>
-                <span>• インフラ (AWS, Docker等)</span>
-                <span>• プログラミング言語 (Java, C++等)</span>
-              </div>
-            </div>
-            <div>
-              <p>得点計算式:</p>
-              <p>
-                得点 = 単語文字数 × 難易度 × 制約係数 × コンボ数
-              </p>
+            <div className="mb-2">
+              <span className="font-semibold">得点計算式:</span>
+              <span className="ml-2">得点 = 単語文字数 × 難易度 × 制約係数 × コンボ数</span>
             </div>
           </div>
         </div>
-
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="nickname">
-              ニックネーム
-            </label>
-            <input
-              type="text"
-              id="nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="ニックネームを入力してください"
-              maxLength={15}
-            />
-            <div>
-              <span>1-15文字</span>
-              <span>{nickname.length}/15</span>
-            </div>
-          </div>
-
-          {error && (
-            <div>
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-          >
+        {/* 入力欄 */}
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-terminalBorder pt-2">
+          <span className="text-terminalText">$</span>
+          <input
+            type="text"
+            id="nickname"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="ニックネームを入力してください"
+            maxLength={15}
+            className="flex-1 bg-transparent outline-none text-terminalText placeholder-terminalAccent px-2 py-1"
+            autoFocus
+          />
+          <button type="submit" className="bg-terminalAccent text-terminalBg font-bold px-3 py-1 rounded hover:bg-green-500 transition">
             入場
           </button>
         </form>
-
-        <div>
-          <a href="#">
-            利用規約
-          </a>
+        {/* エラー表示・文字数カウンタ */}
+        <div className="flex justify-between text-xs mt-1">
+          <span className="text-error">{error}</span>
+          <span className="text-terminalAccent">{nickname.length}/15</span>
+        </div>
+        <div className="mt-2 text-xs text-terminalAccent text-right">
+          <a href="#" className="underline">利用規約</a>
         </div>
       </div>
     </div>
