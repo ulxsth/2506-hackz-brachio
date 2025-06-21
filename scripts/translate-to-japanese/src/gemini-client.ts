@@ -161,26 +161,24 @@ export class GeminiClient {
   }
 
   /**
-   * レスポンスの検証
+   * レスポンスの検証とスマート削減
    */
   private validateResponse(text: string, languageName: string): string {
     const originalText = text;
     const originalLength = text.length;
     
-    // 30文字制限チェック
+    // 30文字制限チェック（記録のみ、削減なし）
     if (text.length > 30) {
       console.warn(`⚠️  文字数超過 (${text.length}文字): "${text}"`);
-      // 30文字で切断して句点を追加
-      text = text.substring(0, 29) + '。';
       
-      // 警告を記録
+      // 警告を記録（削減は行わない）
       this.warnings.push({
         name: languageName,
         warningType: 'LENGTH_EXCEEDED',
         originalText,
-        adjustedText: text,
+        adjustedText: text, // 削減せずそのまま保持
         originalLength,
-        adjustedLength: text.length,
+        adjustedLength: text.length, // 元の長さのまま
         timestamp: new Date().toISOString()
       });
     }
