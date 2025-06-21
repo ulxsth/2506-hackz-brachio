@@ -47,7 +47,7 @@ a {
 
 /* 縦スクロールバーを非表示にするユーティリティ */
 .hide-scrollbar {
-  
+  scrollbar-width: none;
   /* Firefox */
   -ms-overflow-style: none;
   /* IE, Edge */
@@ -58,15 +58,19 @@ a {
   /* Chrome, Safari, Opera */
 }
 
-
-/* スクロールバーを非表示にするユーティリティ */
-.hide-scrollbar {
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE, Edge */
+/* ターミナル風の左端固定スクロール */
+.terminal-scroll {
+  scroll-behavior: auto;
+  overflow-anchor: none;
+  text-align: left;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
+.terminal-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* figletなどの固定幅コンテンツ用 */
+.terminal-content {
+  min-width: max-content;
+  justify-content: flex-start;
 }

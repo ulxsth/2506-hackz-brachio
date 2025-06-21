@@ -28,7 +28,7 @@ const TerminalWindow: React.FC<TerminalWindowProps> = ({ children }) => {
         </div>
       </div>
       {/* 一枚板のターミナル内容 */}
-      <div className="flex-1 overflow-y-auto p-4 hide-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 hide-scrollbar" style={{ overflowAnchor: 'none' }}>
         {children}
       </div>
     </Resizable>
