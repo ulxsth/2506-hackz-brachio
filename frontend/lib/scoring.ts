@@ -2,7 +2,15 @@
 // ターン別の得点計算ロジック
 
 import { debugLog } from './logger'
-import type { ScoringParams } from './database.types'
+
+// 得点計算パラメータの型定義
+export interface ScoringParams {
+  turnType: 'typing' | 'constraint';
+  word: string;
+  difficulty: number;
+  coefficient: number;
+  combo: number;
+}
 
 /**
  * ターン別得点計算
