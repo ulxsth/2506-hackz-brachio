@@ -44,10 +44,35 @@ export default function Home() {
   };
 
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-2">TYPE 2 LIVE</h1>
-      <p className="mb-4">ITタイピングゲーム</p>
+    <div className="overflow-x-auto min-w-max w-full h-full">
+      {/* ターミナル風コマンド履歴 */}
       <div className="mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-terminalAccent">guest@trashcan</span>
+          <span className="text-terminalText">$</span>
+          <span className="text-terminalText">figlet -f larry3d "TYPE 2 LIVE"</span>
+        </div>
+        <div>
+          <pre className="text-green-400 font-mono text-lg leading-tight mt-2 whitespace-pre">
+{`
+  _______  _______  _______  _______    _______  ___      ___   __   __  _______
+ |       ||       ||       ||       |  |       ||   |    |   | |  | |  ||       |
+ |    ___||   _   ||    ___||  _____|  |    ___||   |    |   | |  |_|  ||    ___|
+ |   | __ |  | |  ||   |___ | |_____   |   |___ |   |    |   | |       ||   |___
+ |   ||  ||  |_|  ||    ___||_____  |  |    ___||   |___ |   | |       ||    ___|
+ |   |_| ||       ||   |___  _____| |  |   |___ |       ||   | |   _   ||   |___
+ |_______||_______||_______||_______|  |_______||_______||___| |__| |__||_______|
+`}
+          </pre>
+        </div>
+      </div>
+      {/* 以下、説明やフォームもコマンド風で */}
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-terminalAccent">guest@trashcan</span>
+        <span className="text-terminalText">$</span>
+        <span className="text-terminalText">cat about.txt</span>
+      </div>
+      <div className="mb-4 pl-6 border-l-2 border-terminalBorder">
         <h2 className="font-semibold mb-1">ゲームについて</h2>
         <ul className="list-disc list-inside text-sm mb-2">
           <li>制約条件に沿ったIT用語をタイピング</li>
@@ -71,7 +96,12 @@ export default function Home() {
           <span className="ml-2">得点 = 単語文字数 × 難易度 × 制約係数 × コンボ数</span>
         </div>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-6">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-terminalAccent">guest@trashcan</span>
+        <span className="text-terminalText">$</span>
+        <span className="text-terminalText">register --nickname</span>
+      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 pl-6 border-l-2 border-terminalBorder">
         <label htmlFor="nickname" className="text-sm font-semibold mb-1">ニックネーム</label>
         <input
           type="text"
@@ -94,6 +124,6 @@ export default function Home() {
       <div className="mt-4 text-xs text-terminalAccent text-right">
         <a href="#" className="underline">利用規約</a>
       </div>
-    </>
+    </div>
   );
 }

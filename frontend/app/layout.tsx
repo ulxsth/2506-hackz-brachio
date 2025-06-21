@@ -28,7 +28,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} w-screen h-screen flex items-center justify-center bg-terminalBg`}>
         <JotaiProvider>
           <div className="w-screen h-screen flex items-center justify-center bg-terminalBg">
-            <div className="bg-terminalBg text-terminalText font-mono rounded-lg shadow-lg border border-terminalBorder w-full max-w-2xl h-[90vh] flex flex-col p-0">
+            <div className= "bg-terminalBg text-terminalText font-mono rounded-lg shadow-lg border border-terminalBorder w-full max-w-2xl h-[90vh] flex flex-col p-0">
               {/* ウィンドウヘッダー */}
               <div className="flex items-center justify-between bg-terminalBorder bg-opacity-30 px-3 py-1 rounded-t-lg border-b border-terminalBorder select-none">
                 <span className="text-xs font-bold tracking-widest"></span>
@@ -39,7 +39,7 @@ export default function RootLayout({
                 </div>
               </div>
               {/* 一枚板のターミナル内容 */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 hide-horizonal-scrollbar">
                 {children}
               </div>
             </div>

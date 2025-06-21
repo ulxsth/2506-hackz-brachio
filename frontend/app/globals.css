@@ -44,3 +44,16 @@ a {
     color-scheme: dark;
   }
 }
+
+/* 横スクロールバーを非表示にするユーティリティ */
+.hide-horizonal-scrollbar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE, Edge */
+}
+
+.hide-horizonal-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
