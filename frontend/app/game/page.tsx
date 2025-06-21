@@ -103,6 +103,19 @@ export default function GamePageMVP() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // ルーム設定から制限時間を初期化
+  useEffect(() => {
+    if (currentRoom?.settings) {
+      const settings = currentRoom.settings as { timeLimit: number; maxPlayers: number };
+      const initialTimeSeconds = settings.timeLimit * 60; // 分を秒に変換
+      setTimeLeft(initialTimeSeconds);
+      console.log('⏰ ゲーム時間初期化:', {
+        timeLimitMinutes: settings.timeLimit,
+        initialTimeSeconds
+      });
+    }
+  }, [currentRoom?.settings]);
+
   // ルーム情報とターンマネージャー初期化
   useEffect(() => {
     const initializeGame = async () => {
