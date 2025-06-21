@@ -1,4 +1,3 @@
-// Database Types - Updated for Dual Turn System
 export type Json =
   | string
   | number
@@ -7,196 +6,35 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      game_sessions: {
-        Row: {
-          id: string
-          room_id: string
-          started_at: string | null
-          ended_at: string | null
-          created_at: string
-          // 新しいターンシステム用フィールド
-          current_turn_type: 'typing' | 'constraint'
-          current_target_word: string | null
-          current_constraint_char: string | null
-          turn_start_time: string | null
-          turn_sequence_number: number
-        }
-        Insert: {
-          id?: string
-          room_id: string
-          started_at?: string | null
-          ended_at?: string | null
-          created_at?: string
-          // 新しいターンシステム用フィールド
-          current_turn_type?: 'typing' | 'constraint'
-          current_target_word?: string | null
-          current_constraint_char?: string | null
-          turn_start_time?: string | null
-          turn_sequence_number?: number
-        }
-        Update: {
-          id?: string
-          room_id?: string
-          started_at?: string | null
-          ended_at?: string | null
-          created_at?: string
-          // 新しいターンシステム用フィールド
-          current_turn_type?: 'typing' | 'constraint'
-          current_target_word?: string | null
-          current_constraint_char?: string | null
-          turn_start_time?: string | null
-          turn_sequence_number?: number
-        }
-      }
-      word_submissions: {
-        Row: {
-          id: string
-          game_session_id: string
-          player_id: string
-          word: string
-          score: number
-          combo_at_time: number
-          is_valid: boolean
-          constraints_met: Json | null
-          submitted_at: string
-          // 新しいターンシステム用フィールド
-          turn_type: 'typing' | 'constraint'
-          target_word: string | null
-          constraint_char: string | null
-          typing_start_time: string | null
-          typing_duration_ms: number | null
-          speed_coefficient: number
-        }
-        Insert: {
-          id?: string
-          game_session_id: string
-          player_id: string
-          word: string
-          score: number
-          combo_at_time: number
-          is_valid: boolean
-          constraints_met?: Json | null
-          submitted_at?: string
-          // 新しいターンシステム用フィールド
-          turn_type?: 'typing' | 'constraint'
-          target_word?: string | null
-          constraint_char?: string | null
-          typing_start_time?: string | null
-          typing_duration_ms?: number | null
-          speed_coefficient?: number
-        }
-        Update: {
-          id?: string
-          game_session_id?: string
-          player_id?: string
-          word?: string
-          score?: number
-          combo_at_time?: number
-          is_valid?: boolean
-          constraints_met?: Json | null
-          submitted_at?: string
-          // 新しいターンシステム用フィールド
-          turn_type?: 'typing' | 'constraint'
-          target_word?: string | null
-          constraint_char?: string | null
-          typing_start_time?: string | null
-          typing_duration_ms?: number | null
-          speed_coefficient?: number
-        }
-      }
-      rooms: {
-        Row: {
-          id: string
-          host_id: string
-          room_code: string
-          status: 'waiting' | 'playing' | 'finished'
-          max_players: number
-          settings: Json
-          game_state: Json
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          host_id: string
-          room_code: string
-          status?: 'waiting' | 'playing' | 'finished'
-          max_players?: number
-          settings?: Json
-          game_state?: Json
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          host_id?: string
-          room_code?: string
-          status?: 'waiting' | 'playing' | 'finished'
-          max_players?: number
-          settings?: Json
-          game_state?: Json
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      room_players: {
-        Row: {
-          id: string
-          room_id: string
-          name: string
-          score: number
-          combo: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          room_id: string
-          name: string
-          score?: number
-          combo?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          room_id?: string
-          name?: string
-          score?: number
-          combo?: number
-          created_at?: string
-        }
-      }
-      it_terms: {
-        Row: {
-          id: string
-          display_text: string
-          romaji_text: string
-          difficulty_id: number
-          category: string | null
-          description: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          display_text: string
-          romaji_text: string
-          difficulty_id: number
-          category?: string | null
-          description?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          display_text?: string
-          romaji_text?: string
-          difficulty_id?: number
-          category?: string | null
-          description?: string | null
-          created_at?: string
-        }
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
@@ -207,39 +45,123 @@ export interface Database {
     Enums: {
       [_ in never]: never
     }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-// ゲーム用の型定義
-export interface TurnData {
-  type: 'typing' | 'constraint'
-  targetWord?: string        // 通常ターン用
-  constraintChar?: string    // 制約ターン用
-  coefficient: number        // 得点係数
-  startTime: Date
-  sequenceNumber: number
-}
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
-export interface TurnSubmissionParams {
-  gameSessionId: string
-  playerId: string
-  word: string
-  turnType: 'typing' | 'constraint'
-  targetWord?: string
-  constraintChar?: string
-  typingStartTime?: Date
-  typingDuration?: number
-  speedCoefficient: number
-  score: number
-  comboAtTime: number
-  isValid: boolean
-  constraintsMet?: any[]
-}
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
-export interface ScoringParams {
-  turnType: 'typing' | 'constraint'
-  word: string
-  difficulty: number
-  coefficient: number // 速度係数 or 制約係数
-  combo: number
-}
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const
+

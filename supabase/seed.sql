@@ -1,6 +1,6 @@
 -- =============================================
 -- TYPE 2 LIVE - Seed Data
--- 表示用テキスト（日本語）+ ローマ字テキスト対応
+-- WanaKana動的変換対応版（romaji_text削除）
 -- =============================================
 
 -- 難易度
@@ -15,36 +15,36 @@ insert into public.difficulties (name, level, description) values
 -- =============================================
 
 -- 基本的な英単語系（短くてタイピングしやすい）
-insert into public.it_terms (display_text, romaji_text, difficulty_id, description, aliases) values
-  ('html', 'html', 1, 'マークアップ言語', array['HTML']),
-  ('css', 'css', 1, 'スタイルシート言語', array['CSS']),
-  ('js', 'js', 1, 'JavaScript略称', array['JavaScript']),
-  ('api', 'api', 2, 'プログラムインターフェース', array['API']),
-  ('sql', 'sql', 1, '構造化クエリ言語', array['SQL']),
-  ('git', 'git', 2, 'バージョン管理', array['Git']),
-  ('aws', 'aws', 2, 'クラウドサービス', array['AWS']),
-  ('app', 'app', 1, 'アプリケーション', array['application']),
-  ('web', 'web', 1, 'ウェブ', array['World Wide Web']),
-  ('json', 'json', 2, 'データ形式', array['JSON']),
-  ('http', 'http', 1, '通信プロトコル', array['HTTP']),
-  ('ui', 'ui', 1, 'ユーザーインターフェース', array['UI']),
-  ('docker', 'docker', 3, 'コンテナ技術', array['Docker']),
-  ('python', 'python', 1, 'プログラミング言語', array['Python']),
-  ('java', 'java', 2, 'プログラミング言語', array['Java']);
+insert into public.it_terms (display_text, difficulty_id, description) values
+  ('html', 1, 'マークアップ言語'),
+  ('css', 1, 'スタイルシート言語'),
+  ('js', 1, 'JavaScript略称'),
+  ('api', 2, 'プログラムインターフェース'),
+  ('sql', 1, '構造化クエリ言語'),
+  ('git', 2, 'バージョン管理'),
+  ('aws', 2, 'クラウドサービス'),
+  ('app', 1, 'アプリケーション'),
+  ('web', 1, 'ウェブ'),
+  ('json', 2, 'データ形式'),
+  ('http', 1, '通信プロトコル'),
+  ('ui', 1, 'ユーザーインターフェース'),
+  ('docker', 3, 'コンテナ技術'),
+  ('python', 1, 'プログラミング言語'),
+  ('java', 2, 'プログラミング言語');
 
 -- 日本語カタカナ系（適度な長さ）
-insert into public.it_terms (display_text, romaji_text, difficulty_id, description, aliases) values
-  ('ブログ', 'burogu', 1, 'ウェブログ', array['blog']),
-  ('チャット', 'chatto', 1, 'リアルタイム会話', array['chat']),
-  ('ファイル', 'fairu', 1, 'データファイル', array['file']),
-  ('テスト', 'tesuto', 1, '動作確認', array['test']),
-  ('デバッグ', 'debaggu', 2, 'バグ修正', array['debug']),
-  ('キャッシュ', 'kyasshu', 2, 'データ高速化', array['cache']),
-  ('サーバー', 'saabaa', 1, 'サービス提供システム', array['server']),
-  ('データベース', 'deetabeesu', 1, 'データ管理システム', array['database']),
-  ('アルゴリズム', 'arugorizu', 2, '問題解決手順', array['algorithm']),
-  ('スクレイピング', 'sukureipingu', 2, 'ウェブデータ収集', array['scraping']),
-  ('フレームワーク', 'fureemuwaaku', 2, '開発基盤', array['framework']),
-  ('バックエンド', 'bakkuendo', 2, 'サーバーサイド', array['backend']),
-  ('フロントエンド', 'furontoendo', 2, 'クライアントサイド', array['frontend']),
-  ('デプロイ', 'depuroi', 2, 'アプリ配布', array['deploy']);
+insert into public.it_terms (display_text, difficulty_id, description) values
+  ('ブログ', 1, 'ウェブログ'),
+  ('チャット', 1, 'リアルタイム会話'),
+  ('ファイル', 1, 'データファイル'),
+  ('テスト', 1, '動作確認'),
+  ('デバッグ', 2, 'バグ修正'),
+  ('キャッシュ', 2, 'データ高速化'),
+  ('サーバー', 1, 'サービス提供システム'),
+  ('データベース', 1, 'データ管理システム'),
+  ('アルゴリズム', 2, '問題解決手順'),
+  ('スクレイピング', 2, 'ウェブデータ収集'),
+  ('フレームワーク', 2, '開発基盤'),
+  ('バックエンド', 2, 'サーバーサイド'),
+  ('フロントエンド', 2, 'クライアントサイド'),
+  ('デプロイ', 2, 'アプリ配布');
