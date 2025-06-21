@@ -105,6 +105,14 @@ function convertToItTerms(languageData) {
  */
 async function main() {
   try {
+    console.log('🚨 it_termsテーブルを初期化します（全件削除）...');
+    const { error: deleteError } = await supabase.from('it_terms').delete().neq('id', 0);
+    if (deleteError) {
+      console.error('❌ it_termsテーブル初期化エラー:', deleteError);
+      throw deleteError;
+    }
+    console.log('🗑️  it_termsテーブル初期化完了！');
+    
     console.log('🚀 翻訳済みデータの挿入を開始します...');
     
     // CSVファイルを読み込み
