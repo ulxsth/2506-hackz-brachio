@@ -75,6 +75,11 @@ export const useRoom = () => {
         onPlayerLeave: (playerId: string) => {
           setPlayers(prev => prev.filter(p => p.id !== playerId))
         },
+        onPlayerUpdate: (updatedPlayer: RoomPlayer) => {
+          setPlayers(prev => 
+            prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p)
+          )
+        },
         onRoomUpdate: (roomData: any) => {
           setCurrentRoom(prev => prev ? { ...prev, ...roomData } : null)
         }
@@ -139,6 +144,11 @@ export const useRoom = () => {
         },
         onPlayerLeave: (playerId: string) => {
           setPlayers(prev => prev.filter(p => p.id !== playerId))
+        },
+        onPlayerUpdate: (updatedPlayer: RoomPlayer) => {
+          setPlayers(prev => 
+            prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p)
+          )
         },
         onRoomUpdate: (roomData: any) => {
           setCurrentRoom(prev => prev ? { ...prev, ...roomData } : null)

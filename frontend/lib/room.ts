@@ -282,9 +282,10 @@ export const setupRealtimeChannel = (params: {
   roomId: string
   onPlayerJoin: (player: RoomPlayer) => void
   onPlayerLeave: (playerId: string) => void
+  onPlayerUpdate: (player: RoomPlayer) => void
   onRoomUpdate: (roomData: any) => void
 }) => {
-  const { roomId, onPlayerJoin, onPlayerLeave, onRoomUpdate } = params
+  const { roomId, onPlayerJoin, onPlayerLeave, onPlayerUpdate, onRoomUpdate } = params
   
   debugLog('📡 setupRealtimeChannel: Realtimeチャンネル設定開始', `room:${roomId}`)
   const channel = supabase.channel(`room:${roomId}`)
@@ -317,6 +318,22 @@ export const setupRealtimeChannel = (params: {
     (payload) => {
       debugLog('👋 realtime: プレイヤー退出イベント受信', payload.old)
       onPlayerLeave(payload.old.id)
+    }
+  )
+
+  // プレイヤー更新イベント（スコア変更等）
+  debugLog('📊 setupRealtimeChannel: プレイヤー更新イベントリスナー設定')
+  channel.on('postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'room_players',
+      filter: `room_id=eq.${roomId}`
+    },
+    (payload) => {
+      debugLog('🎯 realtime: プレイヤー更新イベント受信', payload.new)
+      const updatedPlayer = payload.new as RoomPlayer
+      onPlayerUpdate(updatedPlayer)
     }
   )
   
