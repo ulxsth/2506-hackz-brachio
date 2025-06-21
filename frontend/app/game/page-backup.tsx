@@ -244,7 +244,7 @@ export default function GamePage() {
           // 通常ターン: 提示された単語との完全一致
           if (currentTurn.targetWord && word === currentTurn.targetWord.toLowerCase()) {
             matchedTerm = itTerms.find(term => 
-              term.romaji_text.toLowerCase() === currentTurn.targetWord?.toLowerCase()
+              term.display_text.toLowerCase() === currentTurn.targetWord?.toLowerCase()
             ) || null;
             if (matchedTerm) {
               isValid = true;
@@ -256,7 +256,7 @@ export default function GamePage() {
           // 制約ターン: 指定文字を含み、辞書に存在する単語
           if (currentTurn.constraintChar && word.includes(currentTurn.constraintChar)) {
             matchedTerm = itTerms.find(term => 
-              term.romaji_text.toLowerCase() === word
+              term.display_text.toLowerCase() === word
             ) || null;
             if (matchedTerm) {
               isValid = true;
@@ -306,7 +306,7 @@ export default function GamePage() {
       // フォールバック: レガシー制約システムを使用
       if (word.includes(constraint.letter)) {
         matchedTerm = itTerms.find(term => 
-          term.romaji_text.toLowerCase() === word
+          term.display_text.toLowerCase() === word
         ) || null;
         
         if (matchedTerm) {

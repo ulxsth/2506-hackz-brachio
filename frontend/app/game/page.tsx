@@ -173,19 +173,22 @@ export default function GamePageMVP() {
     let matchedTerm: ITTerm | null = null;
 
     // ターン種別による検証
+    // TODO: WanaKana導入後、より柔軟な検証に変更予定
     if (currentTurn.type === 'typing') {
       // 通常ターン: 提示された単語との完全一致
+      // 注意: targetWordは現在display_text（日本語）が入っている
       if (currentTurn.targetWord && word === currentTurn.targetWord.toLowerCase()) {
         matchedTerm = itTerms.find(term => 
-          term.romaji_text.toLowerCase() === currentTurn.targetWord?.toLowerCase()
+          term.display_text.toLowerCase() === currentTurn.targetWord?.toLowerCase()
         ) || null;
         isValid = !!matchedTerm;
       }
     } else if (currentTurn.type === 'constraint') {
       // 制約ターン: 指定文字を含み、辞書に存在する単語
+      // TODO: WanaKana導入後、ローマ字入力→ひらがな変換してマッチング
       if (currentTurn.constraintChar && word.includes(currentTurn.constraintChar)) {
         matchedTerm = itTerms.find(term => 
-          term.romaji_text.toLowerCase() === word
+          term.display_text.toLowerCase() === word
         ) || null;
         isValid = !!matchedTerm;
       }
