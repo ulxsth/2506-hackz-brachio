@@ -120,7 +120,7 @@ export default function CreateRoomPage() {
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTimeLimit(Number(e.target.value))}
               >
                 <option value={0.5}>30秒</option>
-                <option value={1}>1分</option>
+                <option selected value={1}>1分</option>
                 <option value={3}>3分</option>
                 <option value={5}>5分</option>
                 <option value={10}>10分</option>
