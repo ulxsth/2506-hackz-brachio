@@ -5,6 +5,7 @@ import { CsvProcessor } from './csv-processor';
 import { GeminiClient } from './gemini-client';
 import { SequentialProcessor } from './sequential-processor';
 import { OutputManager } from './output-manager';
+import { ProgressManager } from './progress-manager';
 
 // 環境変数の読み込み
 dotenv.config();
@@ -18,6 +19,7 @@ class TranslationApp {
   private geminiClient!: GeminiClient;
   private sequentialProcessor!: SequentialProcessor;
   private outputManager!: OutputManager;
+  private progressManager!: ProgressManager;
 
   constructor() {
     this.config = this.loadConfig();
@@ -50,18 +52,30 @@ class TranslationApp {
         console.log(`⚠️  ${invalid.length}件の問題のあるデータを除外`);
       }
 
-      // 処理対象データの決定
-      const targetLanguages = this.config.testMode 
-        ? valid.slice(0, this.config.testLimit)
-        : valid;
+      // Step 1.5: 既存データ確認・差分検出（最適化設定時）
+      let targetLanguages = valid;
+      if (this.config.skipExisting) {
+        console.log('\n🔍 Step 1.5: 既存データ確認・差分検出');
+        const existingMap = await this.csvProcessor.readExistingOutput();
+        targetLanguages = this.csvProcessor.filterUnprocessedLanguages(valid, existingMap);
+        
+        if (targetLanguages.length === 0) {
+          console.log('✅ 全てのデータが既に処理済みです！');
+          return;
+        }
+      }
 
-      console.log(`🎯 処理対象: ${targetLanguages.length}件`);
+      // テストモード適用
+      if (this.config.testMode) {
+        targetLanguages = targetLanguages.slice(0, this.config.testLimit);
+        console.log(`🧪 テストモード: ${targetLanguages.length}件に限定`);
+      }
+
+      console.log(`🎯 最終処理対象: ${targetLanguages.length}件`);
 
       // Step 2: 翻訳処理
-      console.log('\n🔄 Step 2: 翻訳処理');
-      const { results, stats } = this.config.testMode
-        ? await this.sequentialProcessor.processAll(targetLanguages.slice(0, this.config.testLimit))
-        : await this.sequentialProcessor.processAll(targetLanguages);
+      console.log('\n🔄 Step 2: 最適化翻訳処理');
+      const { results, stats } = await this.sequentialProcessor.processAll(targetLanguages);
 
       // Step 3: 結果の保存
       console.log('\n💾 Step 3: 結果保存');
@@ -118,11 +132,16 @@ class TranslationApp {
       outputCsvFilename: process.env.OUTPUT_CSV_FILENAME || 'programming-languages-ja.csv',
       outputStatsFilename: process.env.OUTPUT_STATS_FILENAME || 'translation-stats.json',
       outputErrorsFilename: process.env.OUTPUT_ERRORS_FILENAME || 'errors.log',
-      batchSize: parseInt(process.env.BATCH_SIZE || '25'),
+      batchSize: parseInt(process.env.BATCH_SIZE || '10'),
       rateLimitDelay: parseInt(process.env.RATE_LIMIT_DELAY || '1000'),
       maxRetries: parseInt(process.env.MAX_RETRIES || '3'),
       testMode: process.env.TEST_MODE === 'true' || process.argv.includes('--test'),
-      testLimit: parseInt(process.env.TEST_LIMIT || '10')
+      testLimit: parseInt(process.env.TEST_LIMIT || '10'),
+      difficultyEvaluationEnabled: process.env.DIFFICULTY_EVALUATION_ENABLED === 'true',
+      // 最適化設定
+      skipExisting: process.env.SKIP_EXISTING !== 'false', // デフォルトで有効
+      enableResume: process.env.ENABLE_RESUME !== 'false', // デフォルトで有効
+      autoSaveInterval: parseInt(process.env.AUTO_SAVE_INTERVAL || '10')
     };
   }
 
@@ -147,8 +166,12 @@ class TranslationApp {
     console.log('🔧 設定検証完了:');
     console.log(`- 入力ファイル: ${this.config.inputCsvPath}`);
     console.log(`- 出力ディレクトリ: ${this.config.outputDir}`);
-    console.log(`- バッチサイズ: ${this.config.batchSize}`);
+    console.log(`- バッチサイズ: ${this.config.batchSize}件`);
+    console.log(`- 自動保存間隔: ${this.config.autoSaveInterval}件`);
     console.log(`- レート制限: ${this.config.rateLimitDelay}ms`);
+    console.log(`- 認知度評価: ${this.config.difficultyEvaluationEnabled ? '有効' : '無効'}`);
+    console.log(`- 既存データスキップ: ${this.config.skipExisting ? '有効' : '無効'}`);
+    console.log(`- 中断復旧: ${this.config.enableResume ? '有効' : '無効'}`);
     console.log(`- 最大リトライ: ${this.config.maxRetries}回`);
   }
 
@@ -162,7 +185,16 @@ class TranslationApp {
       this.config.rateLimitDelay, 
       this.config.maxRetries
     );
-    this.sequentialProcessor = new SequentialProcessor(this.geminiClient, this.config.rateLimitDelay);
+    this.progressManager = new ProgressManager(this.config.outputDir);
+    this.sequentialProcessor = new SequentialProcessor(
+      this.geminiClient,
+      this.csvProcessor,
+      this.progressManager,
+      this.config.rateLimitDelay,
+      this.config.difficultyEvaluationEnabled,
+      this.config.batchSize,
+      this.config.autoSaveInterval
+    );
     this.outputManager = new OutputManager(this.config.outputDir);
   }
 

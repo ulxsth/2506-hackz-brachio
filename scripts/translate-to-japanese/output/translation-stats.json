@@ -1,34 +1,43 @@
 {
-  "totalLanguages": 3,
-  "processedLanguages": 3,
-  "successfulTranslations": 3,
+  "totalLanguages": 10,
+  "processedLanguages": 10,
+  "successfulTranslations": 10,
   "failedTranslations": 0,
-  "warningsCount": 2,
-  "lengthExceededCount": 2,
+  "warningsCount": 3,
+  "lengthExceededCount": 3,
   "successRate": 100,
-  "averageResponseTime": 9222,
-  "totalProcessingTime": 27666,
-  "startTime": "2025-06-21T05:00:22.721Z",
-  "endTime": "2025-06-21T05:00:50.387Z",
+  "averageResponseTime": 15819,
+  "totalProcessingTime": 158190,
+  "startTime": "2025-06-21T05:32:45.110Z",
+  "endTime": "2025-06-21T05:35:23.300Z",
   "errors": [],
   "warnings": [
     {
       "name": ".QL",
       "warningType": "LENGTH_EXCEEDED",
-      "originalText": "オブジェクト指向のSQL風クエリ言語。階層データも再帰的に検索可能。",
-      "adjustedText": "オブジェクト指向のSQL風クエリ言語。階層データも再帰的に検索可能。",
+      "originalText": "オブジェクト指向のSQL風問合せ言語。階層データも再帰的に検索可能。",
+      "adjustedText": "オブジェクト指向のSQL風問合せ言語。階層データも再帰的に検索可能。",
       "originalLength": 34,
       "adjustedLength": 34,
-      "timestamp": "2025-06-21T05:00:34.309Z"
+      "timestamp": "2025-06-21T05:33:02.816Z"
     },
     {
       "name": "Formula",
       "warningType": "LENGTH_EXCEEDED",
-      "originalText": "Lotus Notesのスクリプト言語。接頭辞「-」で始まる要素が多い。",
-      "adjustedText": "Lotus Notesのスクリプト言語。接頭辞「-」で始まる要素が多い。",
-      "originalLength": 36,
-      "adjustedLength": 36,
-      "timestamp": "2025-06-21T05:00:45.385Z"
+      "originalText": "Lotus Notesのスクリプト言語。記号「-」で始まる要素が多い。",
+      "adjustedText": "Lotus Notesのスクリプト言語。記号「-」で始まる要素が多い。",
+      "originalLength": 35,
+      "adjustedLength": 35,
+      "timestamp": "2025-06-21T05:33:19.258Z"
+    },
+    {
+      "name": "ActionScript",
+      "warningType": "LENGTH_EXCEEDED",
+      "originalText": "Macromediaが開発したオブジェクト指向言語。ECMAScript実装。",
+      "adjustedText": "Macromediaが開発したオブジェクト指向言語。ECMAScript実装。",
+      "originalLength": 39,
+      "adjustedLength": 39,
+      "timestamp": "2025-06-21T05:35:12.873Z"
     }
   ]
 }
