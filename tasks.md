@@ -26,8 +26,14 @@
    - ホストのみがRPC実行、全プレイヤーが結果ページ遷移
    - 権限チェックと同期を適切に処理
 
-### 🔄 実装待ち
-- [ ] `handleTimerEndGame`関数の実装
+4. **実装完了** ✅
+   - `handleTimerEndGame`関数実装完了
+   - タイマー終了時の処理フロー修正完了
+   - TypeScript・Next.jsビルド確認済み
+   - git commit完了
+
+### 📋 実装報告書
+`/docs/reports/202506220007-timer-end-game-processing-fix.md`
 - [ ] タイマー終了時の処理フロー修正
 - [ ] 動作確認とテスト
 - [ ] コミットと報告書作成
