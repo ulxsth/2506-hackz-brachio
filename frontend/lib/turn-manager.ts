@@ -29,7 +29,7 @@ const LETTER_COEFFICIENTS: Record<string, number> = {
   'j': 6, 'q': 6, 'x': 7, 'z': 8
 }
 
-const RATIO_TYPING_TURN = 90 / 100
+const RATIO_TYPING_TURN = 70 / 100
 const RATIO_CONSTRAINT_TURN = 1 - RATIO_TYPING_TURN
 
 /**
