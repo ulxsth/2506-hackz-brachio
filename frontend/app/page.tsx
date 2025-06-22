@@ -63,15 +63,17 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="text-terminalAccent">guest@trashcan</span>
             <span className="text-terminalText">$</span>
-            <span className="text-terminalText">figlet -f smslant "TYPE 2 LIVE"</span>
+            <span className="text-terminalText">figlet -f smslant "TYPE 2 DIVE"</span>
           </div>
           <div className="mb-4 pl-6 border-l-2 border-terminalBorder">
             <pre className="text-green-400 font-mono text-[15px] leading-tight tracking-tight whitespace-pre bg-transparent p-0 m-0 text-left"
               style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
-              {` ________  _____  ____  ___    __   _____   ______
-/_  __/\\ \\/ / _ \\/ __/ |_  |  / /  /  _/ | / / __/
- / /    \\  / ___/ _/  / __/  / /___/ / | |/ / _/
-/_/     /_/_/  /___/ /____/ /____/___/ |___/___/  `}
+              {`
+ ________  _____  ____  ___    ___  _____   ______
+/_  __/\\ \\/ / _ \\/ __/ |_  |  / _ \\/  _/ | / / __/
+ / /    \\  / ___/ _/  / __/  / / /// / | |/ / _/  
+/_/     /_/_/  /___/ /____/ /____/___/ |___/___/   
+`}
             </pre>
           </div>
         </div>
