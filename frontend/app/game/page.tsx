@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useRoom } from '@/hooks/useRoom';
-import { submitWord, updatePlayerScore, startGame } from '@/lib/room';
+import { submitWord, updatePlayerScore, startGame, forceEndGame } from '@/lib/room';
 import { TurnManager, type TurnData } from '@/lib/turn-manager';
 import { calculateScore } from '@/lib/scoring';
 import { useTypingTimer } from '@/hooks/useTypingTimer';
@@ -487,7 +487,7 @@ export default function GamePageMVP() {
         alert('ゲーム終了に失敗しました');
       }
     } catch (error) {
-      console.error('❌ ゲーム終了エラー:', error);
+      console.error('❌ ゲーム終了エラー', error);
       alert('エラーが発生しました');
     }
   };
@@ -495,8 +495,7 @@ export default function GamePageMVP() {
   // タイマー効果
   useEffect(() => {
     if (timeLeft <= 0) {
-      const roomId = currentRoom?.id || 'unknown';
-      router.push(`/result?roomId=${roomId}`);
+      handleTimerEndGame();
       return;
     }
 
@@ -523,6 +522,39 @@ export default function GamePageMVP() {
       if (passTimer) clearInterval(passTimer);
     };
   }, [timeLeft, passCountdown, router]);
+
+  // タイマー終了時のゲーム終了処理
+  const handleTimerEndGame = async () => {
+    try {
+      if (!currentRoom?.id || !user?.id || !currentRoom?.host_id) {
+        console.error('❌ タイマー終了: 必要な情報が不足');
+        const roomId = currentRoom?.id || 'unknown';
+        router.push(`/result?roomId=${roomId}`);
+        return;
+      }
+
+      // ホストのみがゲーム終了処理を実行
+      if (user.id === currentRoom.host_id) {
+        console.log('🏁 タイマー終了: ホストがゲーム終了処理を実行');
+        const result = await forceEndGame();
+        
+        if (!result.success) {
+          console.error('❌ タイマー終了: ゲーム終了処理失敗', result.error);
+        } else {
+          console.log('✅ タイマー終了: ゲーム終了処理成功');
+        }
+      } else {
+        console.log('👥 タイマー終了: 非ホストプレイヤー');
+      }
+      
+      // 全プレイヤーが結果ページに遷移
+      router.push(`/result?roomId=${currentRoom.id}`);
+    } catch (error) {
+      console.error('❌ タイマー終了エラー:', error);
+      const roomId = currentRoom?.id || 'unknown';
+      router.push(`/result?roomId=${roomId}`);
+    }
+  };
 
   // リアルタイムランキング計算（プレイヤーリストから動的に計算）
   const rankedPlayers = useMemo(() => {
