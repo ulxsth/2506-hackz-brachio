@@ -18,6 +18,8 @@ export const playersAtom = atom<RoomPlayer[]>([])
 // Realtimeチャンネル
 export const realtimeChannelAtom = atom<RealtimeChannel | null>(null)
 
+export const gameSessionAtom = atom<string | null>(null)
+
 // エラー管理
 export const errorAtom = atom<string | null>(null)
 

@@ -9,14 +9,14 @@ export const createRoom = async (params: {
   currentUser: { id: string; name: string }
 }) => {
   const { roomId, settings, currentUser } = params
-  
+
   try {
     debugLog('🚀 createRoom: ルーム作成開始', { roomId, settings })
-    
+
     if (!currentUser?.name) {
       throw new Error('ユーザー情報が見つかりません')
     }
-    
+
     // ルーム作成
     debugLog('🏠 createRoom: ルーム作成処理開始', { roomId, hostId: currentUser.id })
     const { data: roomData, error: roomError } = await supabase
@@ -29,7 +29,7 @@ export const createRoom = async (params: {
       })
       .select()
       .single()
-    
+
     if (roomError) {
       debugLog('❌ createRoom: ルーム作成エラー', roomError)
       // 重複するあいことば（Primary Key制約違反）をチェック
@@ -38,9 +38,9 @@ export const createRoom = async (params: {
       }
       throw roomError
     }
-    
+
     debugLog('✅ createRoom: ルーム作成成功', roomData)
-    
+
     // プレイヤー作成（ホスト）
     debugLog('👥 createRoom: ホストプレイヤー作成開始', { userId: currentUser.id, roomId })
     const { data: playerData, error: playerError } = await supabase
@@ -55,7 +55,7 @@ export const createRoom = async (params: {
       })
       .select()
       .single()
-    
+
     if (playerError) {
       debugLog('❌ createRoom: プレイヤー作成エラー', playerError)
       // プレイヤーID重複エラーをチェック
@@ -64,12 +64,12 @@ export const createRoom = async (params: {
       }
       throw playerError
     }
-    
+
     debugLog('✅ createRoom: ホストプレイヤー作成成功', playerData)
     debugLog('🎉 createRoom: ルーム作成完了')
-    
+
     return { success: true, room: roomData, player: playerData }
-    
+
   } catch (error) {
     debugLog('💥 createRoom: エラー発生', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -84,14 +84,14 @@ export const joinRoom = async (params: {
   currentUser: { id: string; name: string }
 }) => {
   const { roomId, playerName, currentUser } = params
-  
+
   try {
     debugLog('🚀 joinRoom: ルーム参加開始', { roomId, playerName })
-    
+
     if (!currentUser) {
       throw new Error('ユーザー情報が見つかりません')
     }
-    
+
     // ルーム存在確認
     debugLog('🔍 joinRoom: ルーム存在確認開始', roomId)
     const { data: roomData, error: roomError } = await supabase
@@ -100,7 +100,7 @@ export const joinRoom = async (params: {
       .eq('id', roomId)
       .eq('status', 'waiting')
       .single()
-    
+
     if (roomError || !roomData) {
       debugLog('❌ joinRoom: ルーム取得エラー', roomError)
       if (roomError?.code === 'PGRST116') {
@@ -108,9 +108,9 @@ export const joinRoom = async (params: {
       }
       throw new Error('ルームが見つからないか、既にゲームが開始されています。')
     }
-    
+
     debugLog('✅ joinRoom: ルーム取得成功', roomData)
-    
+
     // 参加人数チェック
     debugLog('👥 joinRoom: 参加人数チェック開始')
     const settings = roomData.settings as { maxPlayers: number; timeLimit: number; category: string }
@@ -118,9 +118,9 @@ export const joinRoom = async (params: {
       debugLog('❌ joinRoom: 定員オーバー', { currentPlayers: roomData.players.length, maxPlayers: settings.maxPlayers })
       throw new Error('ルームの定員に達しています。別のルームに参加してください。')
     }
-    
+
     debugLog('✅ joinRoom: 参加人数チェック通過', { currentPlayers: roomData.players?.length || 0, maxPlayers: settings.maxPlayers })
-    
+
     // プレイヤー追加
     debugLog('👥 joinRoom: プレイヤー追加開始', { userId: currentUser.id, playerName, roomId })
     const { data: playerData, error: playerError } = await supabase
@@ -135,7 +135,7 @@ export const joinRoom = async (params: {
       })
       .select()
       .single()
-    
+
     if (playerError) {
       debugLog('❌ joinRoom: プレイヤー追加エラー', playerError)
       // プレイヤーID重複エラーをチェック
@@ -144,12 +144,12 @@ export const joinRoom = async (params: {
       }
       throw playerError
     }
-    
+
     debugLog('✅ joinRoom: プレイヤー追加成功', playerData)
     debugLog('🎉 joinRoom: ルーム参加完了')
-    
+
     return { success: true, room: roomData, player: playerData }
-    
+
   } catch (error) {
     debugLog('💥 joinRoom: エラー発生', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -163,12 +163,12 @@ export const leaveRoom = async (params: {
   channel?: RealtimeChannel | null
 }) => {
   const { userId, channel } = params
-  
+
   try {
     debugLog('🚀 leaveRoom: ルーム退出開始')
     debugLog('👤 leaveRoom: ユーザーID', userId)
     debugLog('📡 leaveRoom: 現在のチャンネル', channel)
-    
+
     if (userId) {
       debugLog('🗑️ leaveRoom: プレイヤー削除開始', userId)
       // プレイヤー削除
@@ -177,17 +177,17 @@ export const leaveRoom = async (params: {
         .delete()
         .eq('id', userId)
         .select()
-      
+
       if (error) {
         debugLog('❌ leaveRoom: プレイヤー削除エラー', error)
         throw error
       }
       debugLog('✅ leaveRoom: プレイヤー削除完了', { deletedData: data })
     }
-    
+
     debugLog('🎉 leaveRoom: ルーム退出完了')
     return { success: true }
-    
+
   } catch (error) {
     debugLog('💥 leaveRoom: エラー発生', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -202,33 +202,33 @@ export const startGame = async (params: {
   hostId: string
 }) => {
   const { userId, roomId, hostId } = params
-  
+
   try {
     debugLog('🚀 startGame: ゲーム開始処理開始')
     debugLog('👤 startGame: ユーザーID', userId)
     debugLog('🏠 startGame: ルームID', roomId)
     debugLog('👑 startGame: ホストID', hostId)
-    
+
     if (userId !== hostId) {
       debugLog('❌ startGame: 権限エラー', { userId, hostId })
       throw new Error('Only host can start the game')
     }
-    
+
     // start_game_session RPCを呼び出し（ルーム状態変更とgame_sessions作成を同時実行）
     debugLog('🎮 startGame: start_game_session RPC呼び出し開始', roomId)
     const { data, error } = await supabase.rpc('start_game_session', {
       p_room_id: roomId
     })
-    
+
     if (error) {
       debugLog('❌ startGame: start_game_session RPC エラー', error)
       throw error
     }
-    
+
     debugLog('✅ startGame: start_game_session RPC 成功', data)
     debugLog('🎉 startGame: ゲーム開始完了（ルーム状態変更＋game_sessions作成）')
     return { success: true, data: data }
-    
+
   } catch (error) {
     debugLog('💥 startGame: エラー発生', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -243,33 +243,33 @@ export const forceEndGame = async (params: {
   hostId: string
 }) => {
   const { userId, roomId, hostId } = params
-  
+
   try {
     debugLog('🚀 forceEndGame: ゲーム強制終了処理開始')
     debugLog('👤 forceEndGame: ユーザーID', userId)
     debugLog('🏠 forceEndGame: ルームID', roomId)
     debugLog('👑 forceEndGame: ホストID', hostId)
-    
+
     if (userId !== hostId) {
       debugLog('❌ forceEndGame: 権限エラー', { userId, hostId })
       throw new Error('Only host can force end the game')
     }
-    
+
     // end_game_session RPCを呼び出し（ルーム状態変更とgame_sessions終了を同時実行）
     debugLog('🏁 forceEndGame: end_game_session RPC呼び出し開始', roomId)
     const { data, error } = await supabase.rpc('end_game_session', {
       p_room_id: roomId
     })
-    
+
     if (error) {
       debugLog('❌ forceEndGame: end_game_session RPC エラー', error)
       throw error
     }
-    
+
     debugLog('✅ forceEndGame: end_game_session RPC 成功', data)
     debugLog('🎉 forceEndGame: ゲーム強制終了完了（ルーム状態変更＋game_sessions終了）')
     return { success: true }
-    
+
   } catch (error) {
     debugLog('💥 forceEndGame: エラー発生', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -283,29 +283,30 @@ export const setupRealtimeChannel = (params: {
   onPlayerJoin: (player: RoomPlayer) => void
   onPlayerLeave: (playerId: string) => void
   onPlayerUpdate: (player: RoomPlayer) => void
-  onRoomUpdate: (roomData: any) => void
+  onRoomUpdate: (roomData: any) => void,
+  onGameSessionCreated: (sessionData: any) => void
 }) => {
-  const { roomId, onPlayerJoin, onPlayerLeave, onPlayerUpdate, onRoomUpdate } = params
-  
+  const { roomId, onPlayerJoin, onPlayerLeave, onPlayerUpdate, onRoomUpdate, onGameSessionCreated } = params
+
   debugLog('📡 setupRealtimeChannel: Realtimeチャンネル設定開始', `room:${roomId}`)
   const channel = supabase.channel(`room:${roomId}`)
-  
+
   // プレイヤー参加イベント
   debugLog('🎯 setupRealtimeChannel: プレイヤー参加イベントリスナー設定')
-  channel.on('postgres_changes', 
-    { 
-      event: 'INSERT', 
-      schema: 'public', 
+  channel.on('postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
       table: 'room_players',
       filter: `room_id=eq.${roomId}`
-    }, 
+    },
     (payload) => {
       debugLog('👥 realtime: プレイヤー参加イベント受信', payload.new)
       const newPlayer = payload.new as RoomPlayer
       onPlayerJoin(newPlayer)
     }
   )
-  
+
   // プレイヤー退出イベント
   debugLog('🚪 setupRealtimeChannel: プレイヤー退出イベントリスナー設定')
   channel.on('postgres_changes',
@@ -323,7 +324,6 @@ export const setupRealtimeChannel = (params: {
 
   // プレイヤー更新イベント（スコア変更等）
   debugLog('📊 setupRealtimeChannel: プレイヤー更新イベントリスナー設定')
-  console.log('🔧 DEBUG: プレイヤー更新イベントフィルター設定:', `room_id=eq.${roomId}`)
   channel.on('postgres_changes',
     {
       event: 'UPDATE',
@@ -333,12 +333,11 @@ export const setupRealtimeChannel = (params: {
     },
     (payload) => {
       debugLog('🎯 realtime: プレイヤー更新イベント受信', payload.new)
-      console.log('🔧 DEBUG: プレイヤー更新イベント詳細:', payload)
       const updatedPlayer = payload.new as RoomPlayer
       onPlayerUpdate(updatedPlayer)
     }
   )
-  
+
   // ルーム状態変更イベント
   debugLog('🏠 setupRealtimeChannel: ルーム状態変更イベントリスナー設定')
   channel.on('postgres_changes',
@@ -353,19 +352,35 @@ export const setupRealtimeChannel = (params: {
       onRoomUpdate(payload.new)
     }
   )
-  
+
+  channel.on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'game_sessions',
+      filter: `room_id=eq.${roomId}`
+    },
+    (payload) => {
+      // payload.new に更新後のレコードが入る
+      // const newSessionId = payload.new.session_id;
+      // if (newSessionId) {
+      //   setGameSessionId(newSessionId);
+      //   console.log('🟢 Postgres ChangesでセッションID受信:', newSessionId);
+      //}
+
+      debugLog('🎮 realtime: ゲームセッション作成イベント受信', payload.new)
+      onGameSessionCreated(payload.new.id)
+    }
+  );
+
   return channel
 }
 
 // チャンネル購読
 export const subscribeChannel = async (channel: RealtimeChannel) => {
   debugLog('🔌 subscribeChannel: チャンネル購読開始')
-  console.log('🔧 DEBUG: チャンネル状態:', channel.state)
-  console.log('🔧 DEBUG: チャンネルトピック:', channel.topic)
-  
-  const subscribeResult = await channel.subscribe()
-  console.log('🔧 DEBUG: 購読結果:', subscribeResult)
-  
+  await channel.subscribe()
   debugLog('✅ subscribeChannel: チャンネル購読成功')
 }
 
@@ -377,7 +392,7 @@ export const getGameResults = async (roomId: string): Promise<{
 }> => {
   try {
     debugLog('📊 getGameResults: 結果集計開始', { roomId })
-    
+
     if (!roomId) {
       throw new Error('Room ID is required')
     }
@@ -475,7 +490,7 @@ export const getGameResults = async (roomId: string): Promise<{
     debugLog('✅ getGameResults: 統計計算完了', playerResults)
 
     // 5. ゲーム時間の計算
-    const gameDuration = latestSession.start_time && latestSession.end_time 
+    const gameDuration = latestSession.start_time && latestSession.end_time
       ? Math.round((new Date(latestSession.end_time).getTime() - new Date(latestSession.start_time).getTime()) / 1000)
       : null
 
@@ -526,7 +541,7 @@ export const submitWord = async (params: {
 }): Promise<{ success: boolean; error?: string }> => {
   try {
     debugLog('📝 submitWord: 単語提出開始', params)
-    
+
     const { error } = await supabase
       .from('word_submissions')
       .insert({
@@ -570,7 +585,7 @@ export const updatePlayerScore = async (params: {
 }): Promise<{ success: boolean; error?: string }> => {
   try {
     debugLog('🎯 updatePlayerScore: スコア更新開始', params)
-    
+
     // 現在のスコアを取得
     const { data: currentPlayer, error: fetchError } = await supabase
       .from('room_players')
@@ -584,7 +599,6 @@ export const updatePlayerScore = async (params: {
     }
 
     // 新しいスコアで更新
-    console.log('🔧 DEBUG: スコア更新前:', { playerId: params.playerId, roomId: params.roomId, currentScore: currentPlayer.score, scoreToAdd: params.scoreToAdd })
     const { error } = await supabase
       .from('room_players')
       .update({
@@ -599,7 +613,6 @@ export const updatePlayerScore = async (params: {
       throw error
     }
 
-    console.log('🔧 DEBUG: スコア更新後:', { playerId: params.playerId, newScore: currentPlayer.score + params.scoreToAdd })
     debugLog('✅ updatePlayerScore: スコア更新成功')
     return { success: true }
 

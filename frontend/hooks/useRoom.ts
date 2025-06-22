@@ -6,7 +6,8 @@ import {
   currentRoomAtom,
   playersAtom,
   realtimeChannelAtom,
-  errorAtom
+  errorAtom,
+  gameSessionAtom
 } from '../lib/supabase-atoms'
 import {
   createRoom,
@@ -29,6 +30,7 @@ export const useRoom = () => {
   const [players, setPlayers] = useAtom(playersAtom)
   const [realtimeChannel, setRealtimeChannel] = useAtom(realtimeChannelAtom)
   const [error, setError] = useAtom(errorAtom)
+  const setGameSessionAtom = useSetAtom(gameSessionAtom)
 
   // 結果取得用の状態
   const [gameResults, setGameResults] = useState<GameResultsSummary | null>(null)
@@ -83,6 +85,10 @@ export const useRoom = () => {
         },
         onRoomUpdate: (roomData: any) => {
           setCurrentRoom(prev => prev ? { ...prev, ...roomData } : null)
+        },
+        onGameSessionCreated: (sessionId) => {
+          console.log('Game session created:', sessionId)
+          setGameSessionAtom(sessionId)
         }
       })
 
@@ -153,6 +159,10 @@ export const useRoom = () => {
         },
         onRoomUpdate: (roomData: any) => {
           setCurrentRoom(prev => prev ? { ...prev, ...roomData } : null)
+        },
+        onGameSessionCreated: (sessionId) => {
+          console.log('Game session created:', sessionId)
+          setGameSessionAtom(sessionId)
         }
       })
 

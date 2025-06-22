@@ -11,8 +11,8 @@ import { useTypingTimer } from '@/hooks/useTypingTimer';
 import { TypingInput } from '@/components/TypingInput';
 import { Button, Card } from '@/components/ui';
 import type { Database } from '@/lib/database.types';
-import { useAtomValue } from 'jotai';
-import { realtimeChannelAtom } from '@/lib/supabase-atoms';
+import { useAtom, useAtomValue } from 'jotai';
+import { gameSessionAtom, realtimeChannelAtom } from '@/lib/supabase-atoms';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
 
@@ -75,7 +75,7 @@ export default function GamePageMVP() {
   const [myRank, setMyRank] = useState(1);
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [gameSessionId, setGameSessionId] = useAtom(gameSessionAtom);
   const [feedback, setFeedback] = useState<string>('');
   const [words, setWords] = useState<string[]>([]);
   const [itTerms, setItTerms] = useState<ITTerm[]>([]);
@@ -115,10 +115,10 @@ export default function GamePageMVP() {
       unsubscribe = realTimeChannel.on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: 'INSERT',
           schema: 'public',
           table: 'game_sessions',
-          filter: `id=eq.${currentRoom.id}`
+          filter: `room_id=eq.${currentRoom.id}`
         },
         (payload) => {
           // payload.new に更新後のレコードが入る
@@ -369,6 +369,7 @@ export default function GamePageMVP() {
       try {
         console.log('🔍 DB記録処理開始:', { gameSessionId, userId: user?.id });
 
+        console.log("hogehogee")
         if (gameSessionId) {
           // タイピング測定データを取得
           const typingData = finishTimer();
