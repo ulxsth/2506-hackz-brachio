@@ -109,16 +109,23 @@ export default function GamePageMVP() {
 
   // ルーム情報とターンマネージャー初期化
   useEffect(() => {
+    let unsubscribe;
     if (!isHost && currentRoom?.id && realTimeChannel) {
-      console.log("subscribing...")
-      // Broadcast購読
-      const unsubscribe = realTimeChannel.on(
-        'broadcast',
-        { event: 'session_id_created' },
+      // roomsテーブルのUPDATEイベントを購読
+      unsubscribe = realTimeChannel.on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'game_sessions',
+          filter: `id=eq.${currentRoom.id}`
+        },
         (payload) => {
-          if (payload?.payload?.session_id) {
-            setGameSessionId(payload.payload.session_id);
-            console.log('🎉 BroadcastでセッションID受信:', payload.payload.session_id);
+          // payload.new に更新後のレコードが入る
+          const newSessionId = payload.new.session_id;
+          if (newSessionId) {
+            setGameSessionId(newSessionId);
+            console.log('🟢 Postgres ChangesでセッションID受信:', newSessionId);
           }
         }
       );
