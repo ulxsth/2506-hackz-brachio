@@ -11,6 +11,8 @@ import { useTypingTimer } from '@/hooks/useTypingTimer';
 import { TypingInput } from '@/components/TypingInput';
 import { Button, Card } from '@/components/ui';
 import type { Database } from '@/lib/database.types';
+import { useAtomValue } from 'jotai';
+import { realtimeChannelAtom } from '@/lib/supabase-atoms';
 
 type ITTerm = Database['public']['Tables']['it_terms']['Row'];
 
@@ -87,6 +89,9 @@ export default function GamePageMVP() {
   const [turnManager, setTurnManager] = useState<TurnManager | null>(null);
   const [currentTurn, setCurrentTurn] = useState<TurnData | null>(null);
 
+  // atom
+  const realTimeChannel = useAtomValue(realtimeChannelAtom)!;
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   // ルーム設定から制限時間を初期化
@@ -104,6 +109,21 @@ export default function GamePageMVP() {
 
   // ルーム情報とターンマネージャー初期化
   useEffect(() => {
+    if (!isHost && currentRoom?.id && realTimeChannel) {
+      console.log("subscribing...")
+      // Broadcast購読
+      const unsubscribe = realTimeChannel.on(
+        'broadcast',
+        { event: 'session_id_created' },
+        (payload) => {
+          if (payload?.payload?.session_id) {
+            setGameSessionId(payload.payload.session_id);
+            console.log('🎉 BroadcastでセッションID受信:', payload.payload.session_id);
+          }
+        }
+      );
+    }
+
     const initializeGame = async () => {
       if (currentRoom?.id && user?.id) {
         try {
@@ -123,6 +143,11 @@ export default function GamePageMVP() {
               // result.dataはRPC関数から返されるJSONオブジェクト
               if (isStartGameSessionResult(result.data)) {
                 setGameSessionId(result.data.session_id);
+                realTimeChannel.send({
+                  type: 'broadcast',
+                  event: 'session_id_created',
+                  payload: { session_id: result.data.session_id }
+                })
               } else {
                 console.error('❌ 予期しないデータ形式', result.data);
               }
@@ -506,7 +531,7 @@ export default function GamePageMVP() {
       if (user.id === currentRoom.host_id) {
         console.log('🏁 タイマー終了: ホストがゲーム終了処理を実行');
         const result = await forceEndGame();
-        
+
         if (!result.success) {
           console.error('❌ タイマー終了: ゲーム終了処理失敗', result.error);
         } else {
@@ -515,7 +540,7 @@ export default function GamePageMVP() {
       } else {
         console.log('👥 タイマー終了: 非ホストプレイヤー');
       }
-      
+
       // 全プレイヤーが結果ページに遷移
       router.push(`/result?roomId=${currentRoom.id}`);
     } catch (error) {
@@ -528,7 +553,7 @@ export default function GamePageMVP() {
   // リアルタイムランキング計算（プレイヤーリストから動的に計算）
   const rankedPlayers = useMemo(() => {
     if (!players || players.length === 0) return [];
-    
+
     // 自分のスコアを反映したプレイヤーリストを作成
     const playersWithMyScore = players.map(player => {
       // 自分（現在のユーザー）のスコアを最新のmyScoreで更新

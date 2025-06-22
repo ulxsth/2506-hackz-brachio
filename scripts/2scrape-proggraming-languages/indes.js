@@ -1,0 +1,1 @@
+const MAIN_URL = 'https://www.programming-languages.io/';
