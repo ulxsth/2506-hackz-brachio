@@ -13,8 +13,8 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // Supabase設定（ローカル環境）
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌ Supabase環境変数が設定されていません');
@@ -81,23 +81,57 @@ function convertToItTerms(languageData) {
 
       // 説明文：日本語説明 + 英語説明の組み合わせ
       let description = '';
-      if (item.japaneseSummary && item.japaneseSummary.trim()) {
+      if (item.japaneseSummary.trim()) {
         description = item.japaneseSummary.trim();
-      }
-      if (item.summary && item.summary.trim()) {
-        if (description) {
-          description += '\n\n' + item.summary.trim();
-        } else {
-          description = item.summary.trim();
-        }
       }
 
       return {
         display_text: item.name.trim(),
         description: description || null,
-        difficulty_id: difficultyId
+        difficulty_id: difficultyId,
       };
     });
+}
+
+/**
+ * マスターデータ（difficulties）を挿入
+ */
+async function insertMasterData() {
+  console.log('📊 マスターデータの確認・挿入を開始します...');
+
+  // difficulties テーブルの確認・挿入
+  const { data: existingDifficulties, error: diffError } = await supabase
+    .from('difficulties')
+    .select('*');
+
+  if (diffError) {
+    console.error('❌ difficultiesテーブル確認エラー:', diffError);
+    throw diffError;
+  }
+
+  console.log(`📋 既存のdifficulties: ${existingDifficulties.length}件`);
+
+  if (existingDifficulties.length === 0) {
+    console.log('🔄 difficultiesマスターデータを挿入中...');
+    const difficultiesData = [
+      { id: 1, level: 1, name: '初級', description: '知ってて当然なレベル' },
+      { id: 2, level: 2, name: '中級', description: '知ってて一人前なレベル' },
+      { id: 3, level: 3, name: '上級', description: '友達に自慢できるレベル' },
+      { id: 4, level: 4, name: '専門家', description: 'なんで知ってるんですか？怖...レベル' }
+    ];
+
+    const { error: insertDiffError } = await supabase
+      .from('difficulties')
+      .insert(difficultiesData);
+
+    if (insertDiffError) {
+      console.error('❌ difficultiesマスターデータ挿入エラー:', insertDiffError);
+      throw insertDiffError;
+    }
+    console.log('✅ difficultiesマスターデータ挿入完了！');
+  }
+
+  console.log('🎉 マスターデータ確認・挿入完了！');
 }
 
 /**
@@ -105,6 +139,9 @@ function convertToItTerms(languageData) {
  */
 async function main() {
   try {
+    // マスターデータの確認・挿入
+    await insertMasterData();
+
     console.log('🚨 it_termsテーブルを初期化します（全件削除）...');
     const { error: deleteError } = await supabase.from('it_terms').delete().gte('id', '00000000-0000-0000-0000-000000000000');
     if (deleteError) {
