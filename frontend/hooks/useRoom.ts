@@ -20,6 +20,7 @@ import {
 } from '../lib/room'
 import type { Room, RoomPlayer, GameResultsSummary } from '../lib/supabase'
 import { useState } from 'react'
+import { syncBuiltinESMExports } from 'module'
 
 export const useRoom = () => {
   const [connectionState, setConnectionState] = useAtom(connectionStateAtom)
@@ -232,6 +233,9 @@ export const useRoom = () => {
       roomId: currentRoom.id,
       hostId: currentRoom.host_id
     })
+
+    // 3秒待ってみる
+    await new Promise(resolve => setTimeout(resolve, 3000))
 
     if (!result.success) {
       setError(result.error || '不明なエラーが発生しました')
