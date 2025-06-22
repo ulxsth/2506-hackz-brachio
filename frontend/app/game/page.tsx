@@ -9,7 +9,6 @@ import { TurnManager, type TurnData } from '@/lib/turn-manager';
 import { calculateScore } from '@/lib/scoring';
 import { useTypingTimer } from '@/hooks/useTypingTimer';
 import { TypingInput } from '@/components/TypingInput';
-import { useWanaKanaValidator } from '@/hooks/useWanaKanaValidator';
 import { Button, Card } from '@/components/ui';
 import type { Database } from '@/lib/database.types';
 
@@ -87,13 +86,6 @@ export default function GamePageMVP() {
   // ターンシステム
   const [turnManager, setTurnManager] = useState<TurnManager | null>(null);
   const [currentTurn, setCurrentTurn] = useState<TurnData | null>(null);
-
-  // WanaKana検証システム
-  const wanaKanaValidator = useWanaKanaValidator({
-    itTerms: itTerms,
-    targetWord: currentTurn?.type === 'typing' ? currentTurn.targetWord : undefined,
-    constraintChar: currentTurn?.type === 'constraint' ? currentTurn.constraintChar : undefined
-  });
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -275,39 +267,24 @@ export default function GamePageMVP() {
     // タイピング測定終了
     const { duration, coefficient } = finishTimer();
 
-    // WanaKana検証システムを使用
-    const validation = wanaKanaValidator.validateInput(word);
-    let isValid = validation.isValid;
-    let points = 0;
+    // --- ここから純粋なテキスト一致のみで判定 ---
+    let isValid = false;
     let matchedTerm: ITTerm | null = null;
+    let points = 0;
 
-    // マッチした用語を特定
-    console.log('🔍 用語マッチング開始:', {
-      isValid,
-      validationMatchedTerm: validation.matchedTerm,
-      itTermsLength: itTerms.length,
-      itTermsFirst3: itTerms.slice(0, 3).map(t => t.display_text)
+    matchedTerm = itTerms.find(term => term.display_text === word) || null;
+    isValid = !!matchedTerm;
+
+    console.log('🔍 テキスト一致判定:', {
+      word,
+      matchedTerm: matchedTerm?.display_text,
+      isValid
     });
-
-    if (isValid && validation.matchedTerm) {
-      matchedTerm = itTerms.find(term =>
-        term.display_text === validation.matchedTerm
-      ) || null;
-
-      console.log('🔍 用語マッチング結果:', {
-        searchTerm: validation.matchedTerm,
-        foundTerm: matchedTerm?.display_text,
-        foundDescription: matchedTerm?.description
-      });
-    }
 
     // 制約ターンの追加検証
     if (currentTurn.type === 'constraint' && currentTurn.constraintChar && isValid) {
-      // 制約文字が含まれているかの確認
-      const constraintHiragana = validation.hiraganaPreview;
-      const constraintCharHiragana = wanaKanaValidator.validator.validateInput(currentTurn.constraintChar).hiraganaPreview;
-
-      if (!constraintHiragana.includes(constraintCharHiragana)) {
+      // 制約文字が含まれているかの確認（ひらがな変換なし、単純な文字列一致）
+      if (!word.toLowerCase().includes(currentTurn.constraintChar)) {
         isValid = false;
         matchedTerm = null;
       }
@@ -347,14 +324,6 @@ export default function GamePageMVP() {
       }
 
       // 単語説明を表示
-      console.log('🔍 説明表示デバッグ:', {
-        word: matchedTerm.display_text,
-        description: matchedTerm.description,
-        descriptionType: typeof matchedTerm.description,
-        descriptionLength: matchedTerm.description?.length,
-        fullTerm: matchedTerm
-      });
-
       setExplanation({
         word: matchedTerm.display_text,
         description: matchedTerm.description || '説明がありません',
